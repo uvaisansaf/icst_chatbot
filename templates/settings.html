@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Settings – ICST Admin">
+    <meta name="theme-color" content="#002b5c">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>Settings — ICST Admin</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ─────────────────────────────────────────────── */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        :root {
+            --indigo:  #4f46e5;
+            --purple:  #7c3aed;
+            --emerald: #059669;
+            --red:     #dc2626;
+            --amber:   #d97706;
+            --blue:    #2563eb;
+            --glass-bg: rgba(255,255,255,0.72);
+            --glass-border: rgba(255,255,255,0.38);
+            --radius-xl: 1.125rem;
+            --radius-lg: 0.75rem;
+            --shadow-card: 0 4px 24px rgba(79,70,229,0.07), 0 1px 4px rgba(0,0,0,0.04);
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+            --font-size: 16px;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: var(--font-size);
+            background: linear-gradient(140deg, #dde4ff 0%, #f0f4ff 55%, #f5f3ff 100%);
+            min-height: 100vh;
+            color: #1e1b4b;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* ── Dark Mode ────────────────────────────────────────────────── */
+        body.dark {
+            background: linear-gradient(140deg, #0f172a 0%, #111827 100%);
+            color: #e2e8f0;
+        }
+        body.dark .glass  { background: rgba(15,23,42,0.88); border-color: rgba(255,255,255,0.08); }
+        body.dark .field-input { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+        body.dark .field-input::placeholder { color: #64748b; }
+        body.dark .setting-row:hover { background: rgba(255,255,255,0.06); }
+        body.dark .tag { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+        body.dark .tag.selected { background: linear-gradient(135deg,#4f46e5,#7c3aed); color:white; }
+        body.dark .section-title { color: #f1f5f9; }
+        body.dark .muted { color: #94a3b8 !important; }
+        body.dark .activity-card { background: rgba(255,255,255,0.06); }
+        body.dark select { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+
+        /* ── Scrollbar ────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#c7d2fe; border-radius:99px; }
+
+        /* ── Glass ────────────────────────────────────────────────────── */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+        }
+
+        /* ── Buttons ──────────────────────────────────────────────────── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 0.45rem; padding: 0.55rem 1.125rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem; font-weight: 600;
+            font-family: inherit; cursor: pointer; border: none;
+            transition: all var(--transition); white-space: nowrap;
+            text-decoration: none;
+        }
+        .btn:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+        .btn:disabled { opacity: 0.6; pointer-events: none; }
+
+        .btn-primary { background: linear-gradient(135deg,var(--indigo),var(--purple)); color:white; box-shadow:0 4px 14px rgba(79,70,229,.32); }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(79,70,229,.4); }
+        .btn-emerald { background: linear-gradient(135deg,#059669,#0d9488); color:white; box-shadow:0 4px 14px rgba(5,150,105,.28); }
+        .btn-emerald:hover { transform:translateY(-2px); }
+        .btn-gray    { background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; }
+        .btn-gray:hover { background:#e5e7eb; }
+        .btn-danger  { background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; box-shadow:0 4px 14px rgba(220,38,38,.28); }
+        .btn-danger:hover { transform:translateY(-2px); }
+        .btn-full { width:100%; }
+        .btn-sm { padding:0.4rem 0.875rem; font-size:0.8125rem; }
+
+        /* ── Form Fields ──────────────────────────────────────────────── */
+        .field-label {
+            display: block; font-size: 0.8125rem; font-weight: 600;
+            color: #374151; margin-bottom: 0.4rem;
+        }
+        body.dark .field-label { color: #cbd5e1; }
+
+        .field-input {
+            width: 100%; padding: 0.625rem 1rem;
+            background: rgba(255,255,255,0.85);
+            border: 1.5px solid #e5e7eb;
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem; font-family: inherit; color: #111827;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            outline: none;
+        }
+        .field-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+        .field-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+        .field-input::placeholder { color: #9ca3af; }
+
+        /* ── Tabs ─────────────────────────────────────────────────────── */
+        .tab-bar {
+            display: flex; flex-wrap: wrap; gap: 0.375rem;
+            margin-bottom: 1.5rem;
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.8125rem; font-weight: 600;
+            border: 1.5px solid transparent;
+            cursor: pointer; font-family: inherit;
+            transition: all var(--transition);
+            background: rgba(255,255,255,0.5);
+            color: #6b7280;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.75); color: var(--indigo); }
+        .tab-btn[aria-selected="true"] {
+            background: linear-gradient(135deg,var(--indigo),var(--purple));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(79,70,229,.28);
+        }
+        body.dark .tab-btn { background: rgba(255,255,255,0.07); color: #94a3b8; }
+        body.dark .tab-btn[aria-selected="true"] { background: linear-gradient(135deg,var(--indigo),var(--purple)); color: white; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Setting Row ──────────────────────────────────────────────── */
+        .setting-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem; padding: 0.75rem 0.875rem;
+            border-radius: var(--radius-lg);
+            transition: background var(--transition);
+        }
+        .setting-row:hover { background: rgba(255,255,255,0.5); }
+        .setting-row-body p:first-child { font-size: 0.875rem; font-weight: 600; color: #1e1b4b; }
+        body.dark .setting-row-body p:first-child { color: #f1f5f9; }
+        .muted { font-size: 0.75rem; color: #6b7280; margin-top: 0.15rem; }
+
+        /* ── Toggle Switch ────────────────────────────────────────────── */
+        .switch { position:relative; display:inline-block; width:48px; height:26px; flex-shrink:0; }
+        .switch input { opacity:0; width:0; height:0; }
+        .slider {
+            position:absolute; cursor:pointer; inset:0;
+            background:#d1d5db; transition:0.25s; border-radius:99px;
+        }
+        .slider::before {
+            content:''; position:absolute;
+            width:20px; height:20px; left:3px; bottom:3px;
+            background:white; transition:0.25s; border-radius:50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background: linear-gradient(135deg,var(--indigo),var(--purple)); }
+        input:checked + .slider::before { transform: translateX(22px); }
+        .switch input:focus-visible + .slider { outline: 2px solid var(--indigo); outline-offset: 2px; }
+
+        /* ── Tags (language / rec type) ──────────────────────────────── */
+        .tag {
+            display: inline-flex; align-items: center; gap: 0.375rem;
+            padding: 0.45rem 0.875rem;
+            background: rgba(255,255,255,0.6);
+            border: 1.5px solid #e5e7eb;
+            border-radius: 99px; font-size: 0.8125rem;
+            cursor: pointer; transition: all var(--transition);
+            user-select: none;
+        }
+        .tag:hover { background: rgba(255,255,255,0.9); border-color: var(--indigo); color: var(--indigo); }
+        .tag.selected {
+            background: linear-gradient(135deg,var(--indigo),var(--purple));
+            color: white; border-color: transparent;
+            box-shadow: 0 3px 10px rgba(79,70,229,0.25);
+        }
+
+        /* ── Color Picker ─────────────────────────────────────────────── */
+        .color-swatch {
+            width: 38px; height: 38px; border-radius: 50%;
+            cursor: pointer; border: 2.5px solid transparent;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .color-swatch:hover { transform: scale(1.12); }
+        .color-swatch.selected { border-color: white; box-shadow: 0 0 0 3px var(--indigo), 0 2px 8px rgba(0,0,0,0.12); }
+
+        /* ── Section Title ────────────────────────────────────────────── */
+        .section-title {
+            font-size: 1rem; font-weight: 700; color: #1e1b4b;
+            display: flex; align-items: center; gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .section-title i { font-size: 0.9rem; color: var(--indigo); }
+
+        /* ── Activity Card ────────────────────────────────────────────── */
+        .activity-card {
+            padding: 0.75rem; background: rgba(255,255,255,0.55);
+            border-radius: var(--radius-lg); margin-bottom: 0.5rem;
+        }
+
+        /* ── Flash ────────────────────────────────────────────────────── */
+        .flash {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.7rem 0.875rem; border-radius: var(--radius-lg);
+            font-size: 0.875rem; font-weight: 500; border-left: 3px solid;
+            transition: opacity 0.35s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease;
+            max-height: 5rem; overflow: hidden;
+        }
+        .flash.dismissing { opacity:0; max-height:0; margin-bottom:0!important; padding-top:0; padding-bottom:0; }
+        .flash-close { margin-left:auto; background:none; border:none; cursor:pointer; color:inherit; opacity:0.5; font-size:1rem; line-height:1; transition:opacity 0.15s; flex-shrink:0; }
+        .flash-close:hover { opacity:1; }
+        .flash-success { background:#f0fdf4; border-color:var(--emerald); color:#166534; }
+        .flash-danger  { background:#fef2f2; border-color:var(--red);     color:#991b1b; }
+        .flash-info    { background:#eff6ff; border-color:var(--blue);    color:#1e40af; }
+
+        /* ── Toast ────────────────────────────────────────────────────── */
+        #toastContainer { position:fixed; bottom:1.5rem; right:1.5rem; z-index:1100; display:flex; flex-direction:column; gap:0.5rem; pointer-events:none; }
+        .toast { background:#1e1b4b; color:white; padding:0.65rem 1rem; border-radius:99px; font-size:0.8rem; font-weight:500; box-shadow:0 6px 20px rgba(0,0,0,.18); font-family:'DM Mono',monospace; animation:toastIn 0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
+        .toast.error { background:#7f1d1d; }
+        .toast.removing { animation:toastOut 0.22s ease forwards; }
+        @keyframes toastIn  { from{transform:translateY(8px) scale(.95);opacity:0} to{transform:none;opacity:1} }
+        @keyframes toastOut { to{transform:translateY(4px) scale(.93);opacity:0} }
+        body.dark .toast { background:rgba(255,255,255,.92); color:#0f172a; }
+
+        /* ── Animations ───────────────────────────────────────────────── */
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+        .anim  { animation: fadeUp 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+        .d1 { animation-delay:.04s } .d2 { animation-delay:.08s }
+        .d3 { animation-delay:.12s } .d4 { animation-delay:.16s }
+
+        /* ── Password Strength ────────────────────────────────────────── */
+        .pw-bar { height:4px; border-radius:99px; transition:width 0.3s, background 0.3s; }
+
+        /* ── Range input ──────────────────────────────────────────────── */
+        input[type=range] { accent-color: var(--indigo); width: 100%; }
+
+        /* ── Divider ──────────────────────────────────────────────────── */
+        .divider { border:none; border-top:1px solid rgba(229,231,235,0.6); margin:1rem 0; }
+
+        /* ── Dark Mode (shared, localStorage-driven) ──────────────────── */
+        body.dark {
+            background: linear-gradient(140deg, #0f172a 0%, #111827 100%) !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark .glass {
+            background: rgba(15,23,42,0.92) !important;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark .sidebar {
+            background: rgba(10,15,30,0.96) !important;
+            border-color: rgba(255,255,255,0.07) !important;
+        }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background: rgba(255,255,255,0.08) !important; color: white !important; }
+        body.dark .nav-item.active { background: linear-gradient(135deg,rgba(79,70,229,0.35),rgba(124,58,237,0.35)) !important; color: white !important; }
+        body.dark .stat-card { background: rgba(30,41,59,0.9) !important; }
+        body.dark h1,body.dark h2,body.dark h3,body.dark h4,body.dark p,body.dark span,body.dark label,body.dark td,body.dark th { color: #e2e8f0 !important; }
+        body.dark .text-gray-500, body.dark .text-gray-600, body.dark .muted { color: #94a3b8 !important; }
+        body.dark table { background: rgba(15,23,42,0.9) !important; }
+        body.dark thead { background: rgba(30,41,59,0.8) !important; }
+        body.dark tr:hover { background: rgba(255,255,255,0.04) !important; }
+        body.dark td, body.dark th { border-color: rgba(255,255,255,0.07) !important; }
+        body.dark input, body.dark textarea, body.dark select {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark input::placeholder, body.dark textarea::placeholder { color: #64748b !important; }
+        body.dark .btn-gray { background: #1e293b !important; color: #cbd5e1 !important; border-color: #334155 !important; }
+        body.dark .sidebar-brand { border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .brand-title { color: #f1f5f9 !important; }
+    </style>
+</head>
+
+<body id="settingsBody"
+    {% if session.get('dark_mode') %}class="dark"{% endif %}
+    data-font-size="{{ session.get('font_size', 'medium') }}">
+<script>
+// Sync localStorage dark mode with server session on settings page load
+document.addEventListener('DOMContentLoaded', function syncDarkOnLoad() {
+    const toggle = document.getElementById('darkModeToggle');
+    if (!toggle) return;
+    const serverDark = toggle.checked;
+    localStorage.setItem('icst_dark_mode', String(serverDark));
+    if (serverDark) document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+});
+// ── Dark Mode (localStorage sync across all admin pages) ────────────────
+(function applyDark() {
+    if (localStorage.getItem('icst_dark_mode') === 'true') {
+        document.body.classList.add('dark');
+    }
+})();</script>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────────── -->
+<nav class="glass mx-3 md:mx-8 mt-4 md:mt-6 px-4 md:px-6 py-3 flex flex-wrap justify-between items-center gap-3 anim">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="width:2.5rem;height:2.5rem;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:0.75rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(79,70,229,.3);">
+            <i class="fas fa-cog" style="color:white;font-size:1rem;"></i>
+        </div>
+        <div>
+            <h1 style="font-size:1rem;font-weight:700;line-height:1.2;">Settings</h1>
+            <p class="muted" style="font-size:0.75rem;">{{ admin_username }}</p>
+        </div>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">
+        <i class="fas fa-arrow-left"></i> Dashboard
+    </a>
+</nav>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<div style="max-width:56rem;margin:0 auto;padding:1.25rem 1rem 3rem;">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div id="flashContainer" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem;" role="alert" aria-live="polite">
+            {% for category, message in messages %}
+                {% set cat = 'danger' if category in ('danger','error') else category %}
+                {% set icon = 'check-circle' if cat=='success' else 'exclamation-triangle' if cat=='danger' else 'info-circle' %}
+                <div class="flash flash-{{ cat }} anim">
+                    <i class="fas fa-{{ icon }}" aria-hidden="true"></i>
+                    <span>{{ message }}</span>
+                    <button class="flash-close" onclick="dismissFlash(this)" aria-label="Dismiss">×</button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ── Tab Bar ───────────────────────────────────────────────────── -->
+    <div class="tab-bar anim d1" role="tablist" aria-label="Settings sections">
+        <button class="tab-btn" role="tab" aria-selected="true"  aria-controls="panel-general"       id="tab-general"       onclick="showTab('general')">
+            <i class="fas fa-sliders-h"></i> General
+        </button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-appearance"    id="tab-appearance"    onclick="showTab('appearance')">
+            <i class="fas fa-palette"></i> Appearance
+        </button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-chatbot"       id="tab-chatbot"       onclick="showTab('chatbot')">
+            <i class="fas fa-robot"></i> Chatbot
+        </button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-language"      id="tab-language"      onclick="showTab('language')">
+            <i class="fas fa-language"></i> Language
+        </button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-security"      id="tab-security"      onclick="showTab('security')">
+            <i class="fas fa-shield-alt"></i> Security
+        </button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-notifications" id="tab-notifications" onclick="showTab('notifications')">
+            <i class="fas fa-bell"></i> Notifications
+        </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PANEL: GENERAL
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-general" class="tab-panel active" role="tabpanel" aria-labelledby="tab-general">
+
+        <!-- Profile -->
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-user-circle"></i>Profile Information</div>
+            <form id="profileForm" onsubmit="saveProfile(event)" novalidate>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                    <div>
+                        <label class="field-label" for="fullName">Full Name</label>
+                        {# full_name is the editable display name; username (login ID) is read-only #}
+                        <input type="text" id="fullName" name="full_name"
+                               value="{{ admin_full_name }}"
+                               required class="field-input">
+                    </div>
+                    <div>
+                        <label class="field-label" for="email">Email Address</label>
+                        <input type="email" id="email" name="email"
+                               value="{{ admin_email }}"
+                               required class="field-input">
+                    </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <label class="field-label">Role</label>
+                    <input type="text" value="{{ admin_role|title }}" disabled class="field-input">
+                </div>
+                <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                    <i class="fas fa-floppy-disk"></i>
+                    <span id="saveProfileLabel">Save Profile</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Password -->
+        <section class="glass anim d2" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-key"></i>Change Password</div>
+            <form id="passwordForm" onsubmit="changePassword(event)" novalidate>
+                <div style="margin-bottom:1rem;">
+                    <label class="field-label" for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="current_password"
+                           required autocomplete="current-password" class="field-input">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.5rem;">
+                    <div>
+                        <label class="field-label" for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="new_password"
+                               required minlength="8" autocomplete="new-password"
+                               class="field-input" oninput="updatePasswordStrength()">
+                    </div>
+                    <div>
+                        <label class="field-label" for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirm_password"
+                               required autocomplete="new-password" class="field-input">
+                    </div>
+                </div>
+                <!-- Password strength bar -->
+                <div style="margin-bottom:1rem;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#9ca3af;margin-bottom:0.25rem;">
+                        <span>Password strength</span>
+                        <span id="pwStrengthLabel">—</span>
+                    </div>
+                    <div style="background:#e5e7eb;border-radius:99px;height:4px;overflow:hidden;">
+                        <div class="pw-bar" id="pwBar" style="width:0%;background:#d1d5db;"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="changePwBtn">
+                    <i class="fas fa-lock"></i>
+                    <span id="changePwLabel">Change Password</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Data Management -->
+        <section class="glass anim d3" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-database"></i>Data Management</div>
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Export All Data</p>
+                    <p class="muted">Download all conversations and analytics as JSON</p>
+                </div>
+                <button onclick="exportData()" id="exportDataBtn" class="btn btn-emerald btn-sm">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+            <hr class="divider">
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Clear Conversation History</p>
+                    <p class="muted">Delete all chat history — this cannot be undone</p>
+                </div>
+                <button onclick="clearHistory()" id="clearHistoryBtn" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+            </div>
+        </section>
+    </div><!-- /panel-general -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PANEL: APPEARANCE
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-appearance" class="tab-panel" role="tabpanel" aria-labelledby="tab-appearance">
+
+        <!-- Theme Color -->
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-palette"></i>Theme Color</div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;" role="radiogroup" aria-label="Theme color">
+                {% set colors = [
+                    ('indigo',  'linear-gradient(135deg,#4f46e5,#7c3aed)'),
+                    ('blue',    'linear-gradient(135deg,#3b82f6,#1e40af)'),
+                    ('emerald', 'linear-gradient(135deg,#10b981,#047857)'),
+                    ('orange',  'linear-gradient(135deg,#f97316,#c2410c)'),
+                    ('rose',    'linear-gradient(135deg,#f43f5e,#be123c)'),
+                    ('teal',    'linear-gradient(135deg,#14b8a6,#0f766e)'),
+                ] %}
+                {% for color, grad in colors %}
+                <button type="button"
+                        class="color-swatch {% if (session.get('theme_color') or 'indigo') == color %}selected{% endif %}"
+                        style="background:{{ grad }};"
+                        data-color="{{ color }}"
+                        onclick="setTheme('{{ color }}', this)"
+                        aria-label="{{ color|title }} theme"
+                        role="radio"
+                        aria-checked="{{ 'true' if (session.get('theme_color') or 'indigo') == color else 'false' }}">
+                </button>
+                {% endfor %}
+            </div>
+            <p class="muted">Theme applies to the entire admin panel.</p>
+        </section>
+
+        <!-- Dark Mode -->
+        <section class="glass anim d2" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-moon"></i>Dark Mode</div>
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Enable Dark Mode</p>
+                    <p class="muted">Switch to a dark theme for reduced eye strain</p>
+                </div>
+                <label class="switch" aria-label="Toggle dark mode">
+                    <input type="checkbox" id="darkModeToggle"
+                           {% if session.get('dark_mode') %}checked{% endif %}
+                           onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Font Size -->
+        <section class="glass anim d3" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-font"></i>Font Size</div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;" role="radiogroup" aria-label="Font size">
+                {% for size, label in [('small','Small — 14px'), ('medium','Medium — 16px (Default)'), ('large','Large — 18px')] %}
+                <label class="setting-row" style="cursor:pointer;">
+                    <span style="font-size:0.875rem;font-weight:500;color:#374151;">{{ label }}</span>
+                    <input type="radio" name="fontSize" value="{{ size }}"
+                           onchange="setFontSize('{{ size }}')"
+                           {% if session.get('font_size', 'medium') == size %}checked{% endif %}
+                           style="accent-color:var(--indigo);width:1rem;height:1rem;">
+                </label>
+                {% endfor %}
+            </div>
+        </section>
+    </div><!-- /panel-appearance -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PANEL: CHATBOT
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-chatbot" class="tab-panel" role="tabpanel" aria-labelledby="tab-chatbot">
+
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-robot"></i>Chatbot Behaviour</div>
+            {% set cs = chatbot_settings %}
+            {% for toggle_id, label, desc, key, default in [
+                ('spellCheckToggle',  'Enable Spell Correction',   'Automatically correct common typos and Sri Lankan English', 'spell_check',    true),
+                ('confidenceToggle',  'Show Confidence Score',     'Display how confident the bot is in its responses',         'show_confidence', false),
+                ('autoSaveToggle',    'Auto-save Conversations',   'Save all chat history for analytics and training',          'auto_save',       true),
+            ] %}
+            <div class="setting-row {% if not loop.last %}border-b border-gray-100{% endif %}">
+                <div class="setting-row-body">
+                    <p>{{ label }}</p>
+                    <p class="muted">{{ desc }}</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="{{ toggle_id }}"
+                           {% if cs.get(key, default) %}checked{% endif %}
+                           data-setting="{{ key }}"
+                           onchange="saveSetting(this.dataset.setting, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="glass anim d2" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-brain"></i>AI Model Settings</div>
+            <div style="margin-bottom:1.25rem;">
+                <label class="field-label" for="confidenceThreshold">Confidence Threshold</label>
+                <input type="range" id="confidenceThreshold" min="0" max="100"
+                       value="{{ cs.get('confidence_threshold', 70) }}"
+                       oninput="updateThreshold(this.value)"
+                       onchange="saveSetting('confidence_threshold', parseInt(this.value))">
+                <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-top:0.3rem;" class="muted">
+                    <span>Lower (more matches)</span>
+                    <span id="thresholdValue" style="font-family:'DM Mono',monospace;font-weight:600;color:var(--indigo);">
+                        {{ cs.get('confidence_threshold', 70) }}%
+                    </span>
+                    <span>Higher (more accurate)</span>
+                </div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Auto-retrain Model</p>
+                    <p class="muted">Automatically retrain after adding new intents</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="autoRetrainToggle"
+                           {% if cs.get('auto_retrain') %}checked{% endif %}
+                           data-setting="auto_retrain"
+                           onchange="saveSetting(this.dataset.setting, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </section>
+
+        <section class="glass anim d3" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-message"></i>Welcome Message</div>
+            <textarea id="welcomeMessage" rows="3" class="field-input" style="margin-bottom:0.75rem;">{{ cs.get('welcome_message', 'Hello! Welcome to ICST University. How can I help you today? 😊') }}</textarea>
+            <button onclick="saveWelcomeMessage()" class="btn btn-primary btn-sm">
+                <i class="fas fa-floppy-disk"></i> Save Welcome Message
+            </button>
+        </section>
+    </div><!-- /panel-chatbot -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PANEL: LANGUAGE
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-language" class="tab-panel" role="tabpanel" aria-labelledby="tab-language">
+        {% set ls = session.get('language_settings', {}) %}
+
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-language"></i>Supported Languages</div>
+            <div class="setting-row" style="margin-bottom:1rem;">
+                <div class="setting-row-body">
+                    <p>Enable Multi-Language Support</p>
+                    <p class="muted">Allow users to chat in Sinhala and Tamil</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="enableMultiLang"
+                           {% if ls.get('enabled', true) %}checked{% endif %}
+                           data-setting="multi_language_enabled"
+                           onchange="saveSetting(this.dataset.setting, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label class="field-label">Active Languages</label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;">
+                    {% for lang_id, emoji, label in [
+                        ('english','🇬🇧','English'),
+                        ('sinhala','🇱🇰','සිංහල'),
+                        ('tamil','🇱🇰','தமிழ்'),
+                    ] %}
+                    <button type="button"
+                            class="tag {% if ls.get('languages', {}).get(lang_id, true) %}selected{% endif %}"
+                            data-lang="{{ lang_id }}"
+                            onclick="toggleLanguage('{{ lang_id }}', this)"
+                            aria-pressed="{{ 'true' if ls.get('languages', {}).get(lang_id, true) else 'false' }}">
+                        {{ emoji }} {{ label }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <label class="field-label" for="defaultLanguage">Default Language</label>
+                <select id="defaultLanguage" class="field-input" style="width:auto;"
+                        onchange="saveSetting('default_language', this.value)">
+                    <option value="en" {% if ls.get('default_language','en') == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                    <option value="si" {% if ls.get('default_language') == 'si' %}selected{% endif %}>🇱🇰 සිංහල</option>
+                    <option value="ta" {% if ls.get('default_language') == 'ta' %}selected{% endif %}>🇱🇰 தமிழ்</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="glass anim d2" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-microphone-alt"></i>Language Detection</div>
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Auto Language Detection</p>
+                    <p class="muted">Automatically respond in the user's detected language</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="autoLangDetect"
+                           {% if ls.get('auto_detect', true) %}checked{% endif %}
+                           data-setting="auto_language_detect"
+                           onchange="saveSetting(this.dataset.setting, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </section>
+    </div><!-- /panel-language -->
+
+    <!-- ════════════════════════════════════════════════════════════
+         PANEL: SECURITY
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-security" class="tab-panel" role="tabpanel" aria-labelledby="tab-security">
+
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-shield-alt"></i>Session Security</div>
+            <div class="setting-row" style="margin-bottom:0.5rem;">
+                <div class="setting-row-body">
+                    <p>Session Timeout</p>
+                    <p class="muted">Auto-logout after inactivity</p>
+                </div>
+                <select id="sessionTimeout" class="field-input" style="width:auto;"
+                        onchange="saveSetting('session_timeout', parseInt(this.value))">
+                    {% for mins, label in [(15,'15 minutes'),(30,'30 minutes'),(60,'1 hour'),(120,'2 hours')] %}
+                    <option value="{{ mins }}" {% if session.get('session_timeout', 30) == mins %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr class="divider">
+            <div class="setting-row">
+                <div class="setting-row-body">
+                    <p>Two-Factor Authentication</p>
+                    <p class="muted">Extra security layer — coming in a future update</p>
+                </div>
+                <label class="switch" title="Two-factor authentication is not yet available">
+                    <input type="checkbox" id="twoFactorToggle" disabled
+                           onclick="showToast && showToast('Two-factor authentication is not yet available.', true); return false;">
+                    <span class="slider" style="opacity:0.45;cursor:not-allowed;"></span>
+                </label>
+            </div>
+        </section>
+
+        <section class="glass anim d2" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-history"></i>Login Activity</div>
+            <div class="activity-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <p style="font-size:0.875rem;font-weight:600;">Last Login</p>
+                        {# FIX: safe Jinja — only call strftime when now is truthy #}
+                        <p class="muted">{{ now.strftime('%d %b %Y, %H:%M') if now else 'Just now' }}</p>
+                    </div>
+                    <i class="fas fa-check-circle" style="color:var(--emerald);"></i>
+                </div>
+            </div>
+            <div class="activity-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <p style="font-size:0.875rem;font-weight:600;">Session</p>
+                        {# FIX: do not expose raw IP address. Show masked version only. #}
+                        <p class="muted">Active — current session only</p>
+                    </div>
+                    <i class="fas fa-laptop" style="color:#9ca3af;"></i>
+                </div>
+            </div>
+        </section>
+    </div><!-- /panel-security -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PANEL: NOTIFICATIONS
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="panel-notifications" class="tab-panel" role="tabpanel" aria-labelledby="tab-notifications">
+        {% set ns = notification_settings %}
+
+        <section class="glass anim d1" style="padding:1.5rem;margin-bottom:1.25rem;">
+            <div class="section-title"><i class="fas fa-bell"></i>Notification Preferences</div>
+            {% for toggle_id, label, desc, key, default in [
+                ('emailNotificationsToggle', 'Email Notifications',        'Receive updates via email',                              'email_notifications', true),
+                ('trainingAlertsToggle',     'Model Training Alerts',      'Get notified when model training completes',             'training_alerts',     true),
+                ('unansweredAlertsToggle',   'Unanswered Question Alerts', 'Get notified when new unanswered questions appear',      'unanswered_alerts',   true),
+            ] %}
+            <div class="setting-row {% if not loop.last %}border-b border-gray-100{% endif %}">
+                <div class="setting-row-body">
+                    <p>{{ label }}</p>
+                    <p class="muted">{{ desc }}</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="{{ toggle_id }}"
+                           {% if ns.get(key, default) %}checked{% endif %}
+                           data-setting="{{ key }}"
+                           onchange="saveSetting(this.dataset.setting, this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="glass anim d2" style="padding:1.5rem;">
+            <div class="section-title"><i class="fas fa-calendar-alt"></i>Report Schedule</div>
+            <div class="setting-row" style="margin-bottom:0.5rem;">
+                <span style="font-size:0.875rem;font-weight:500;">Daily Report</span>
+                <select id="dailyReport" class="field-input" style="width:auto;">
+                    {% for val, label in [('disabled','Disabled'),('9am','9:00 AM'),('5pm','5:00 PM')] %}
+                    <option value="{{ val }}" {% if ns.get('daily_report', '9am') == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr class="divider">
+            <div class="setting-row" style="margin-bottom:1rem;">
+                <span style="font-size:0.875rem;font-weight:500;">Weekly Report</span>
+                <select id="weeklyReport" class="field-input" style="width:auto;">
+                    {% for val, label in [('disabled','Disabled'),('monday','Monday'),('friday','Friday')] %}
+                    <option value="{{ val }}" {% if ns.get('weekly_report', 'monday') == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button onclick="saveReportSchedule()" class="btn btn-primary btn-sm">
+                <i class="fas fa-floppy-disk"></i> Save Schedule
+            </button>
+        </section>
+    </div><!-- /panel-notifications -->
+
+    <!-- Footer -->
+    <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(229,231,235,0.6);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:0.5rem;">
+        <span class="muted" style="font-size:0.75rem;">© 2026 ICST University Chatbot · Powered by fuzzy-difflib engine</span>
+        <div style="display:flex;gap:1rem;">
+            <a href="#" class="muted" style="font-size:0.75rem;text-decoration:none;">Privacy</a>
+            <a href="#" class="muted" style="font-size:0.75rem;text-decoration:none;">Terms</a>
+            <a href="{{ url_for('support_page') }}" class="muted" style="font-size:0.75rem;text-decoration:none;">Support</a>
+        </div>
+    </footer>
+
+</div><!-- /main -->
+
+<div id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+// ═════════════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════════════════════
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+const SETTINGS_URL = '/admin/settings';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FONT SIZE — apply from data attribute on load (no inline style in <body>)
+// ══════════════════════════════════════════════════════════════════════════════
+(function applyFontSize() {
+    const map = { small: '14px', medium: '16px', large: '18px' };
+    const size = document.getElementById('settingsBody').dataset.fontSize || 'medium';
+    document.documentElement.style.setProperty('--font-size', map[size] || '16px');
+})();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════════════════
+function showToast(message, isError = false) {
+    const c = document.getElementById('toastContainer');
+    if (!c) return;
+    const t = document.createElement('div');
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.textContent = (isError ? '✗ ' : '✓ ') + message;
+    c.appendChild(t);
+    setTimeout(() => {
+        t.classList.add('removing');
+        setTimeout(() => t.remove(), 240);
+    }, 2800);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FLASH DISMISS
+// ══════════════════════════════════════════════════════════════════════════════
+function dismissFlash(btn) {
+    const el = btn.closest('.flash');
+    if (!el) return;
+    el.classList.add('dismissing');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+}
+setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(el => {
+        const btn = el.querySelector('.flash-close');
+        if (btn) dismissFlash(btn);
+    });
+}, 6000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════════════════
+function showTab(name) {
+    // Hide all panels
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    // Deselect all tabs
+    document.querySelectorAll('.tab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+    // Activate target
+    const panel = document.getElementById(`panel-${name}`);
+    const btn   = document.getElementById(`tab-${name}`);
+    if (panel) panel.classList.add('active');
+    if (btn)   btn.setAttribute('aria-selected', 'true');
+    // Scroll tab into view on mobile
+    if (btn) btn.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UNIFIED SETTINGS SAVE — all toggle/select settings go through here
+// ══════════════════════════════════════════════════════════════════════════════
+async function saveSetting(key, value) {
+    try {
+        const res = await fetch(SETTINGS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ [key]: value })
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.error || 'Failed to save setting', true);
+            return false;
+        }
+        return true;
+    } catch {
+        showToast('Network error — setting not saved', true);
+        return false;
+    }
+}
+
+// Range threshold display (instant, no server call)
+function updateThreshold(val) {
+    const el = document.getElementById('thresholdValue');
+    if (el) el.textContent = val + '%';
+}
+
+// Welcome message (needs specific key)
+async function saveWelcomeMessage() {
+    const msg = document.getElementById('welcomeMessage')?.value || '';
+    const btn = document.querySelector('[onclick="saveWelcomeMessage()"]');
+    const origHTML = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+    try {
+        const ok = await saveSetting('welcome_message', msg);
+        if (ok) showToast('✅ Welcome message saved');
+    } finally {
+        if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROFILE SAVE
+// ══════════════════════════════════════════════════════════════════════════════
+async function saveProfile(e) {
+    e.preventDefault();
+    const btn   = document.getElementById('saveProfileBtn');
+    const label = document.getElementById('saveProfileLabel');
+    const fullName = document.getElementById('fullName').value.trim();
+    const email    = document.getElementById('email').value.trim();
+
+    if (!fullName || !email) { showToast('Name and email are required', true); return; }
+
+    btn.disabled = true;
+    if (label) label.textContent = 'Saving…';
+
+    try {
+        const res = await fetch(SETTINGS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ full_name: fullName, email })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            showToast('Profile updated');
+        } else {
+            showToast(data.error || 'Failed to update profile', true);
+        }
+    } catch {
+        showToast('Network error', true);
+    } finally {
+        btn.disabled = false;
+        if (label) label.textContent = 'Save Profile';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PASSWORD CHANGE
+// ══════════════════════════════════════════════════════════════════════════════
+async function changePassword(e) {
+    e.preventDefault();
+    const current  = document.getElementById('currentPassword').value;
+    const next     = document.getElementById('newPassword').value;
+    const confirm  = document.getElementById('confirmPassword').value;
+    const btn      = document.getElementById('changePwBtn');
+    const label    = document.getElementById('changePwLabel');
+
+    if (next !== confirm) { showToast('Passwords do not match', true); return; }
+    if (next.length < 8)  { showToast('Password must be at least 8 characters', true); return; }
+
+    btn.disabled = true;
+    if (label) label.textContent = 'Changing…';
+
+    try {
+        const res = await fetch(SETTINGS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ current_password: current, new_password: next })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            showToast('Password changed — logging out…');
+            // FIX: POST logout with CSRF token — not window.location.href (which is GET, 405)
+            setTimeout(() => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("admin_logout") }}';
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden'; csrf.name = 'csrf_token'; csrf.value = csrfToken;
+                form.appendChild(csrf);
+                document.body.appendChild(form);
+                form.submit();
+            }, 1800);
+        } else {
+            showToast(data.error || 'Current password is incorrect', true);
+        }
+    } catch {
+        showToast('Network error', true);
+    } finally {
+        btn.disabled = false;
+        if (label) label.textContent = 'Change Password';
+    }
+}
+
+// Password strength meter
+function updatePasswordStrength() {
+    const pw  = document.getElementById('newPassword')?.value || '';
+    const bar = document.getElementById('pwBar');
+    const lbl = document.getElementById('pwStrengthLabel');
+    if (!bar || !lbl) return;
+
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    const levels = [
+        { pct: '0%',   color: '#d1d5db', label: '—' },
+        { pct: '25%',  color: '#ef4444', label: 'Weak' },
+        { pct: '50%',  color: '#f97316', label: 'Fair' },
+        { pct: '75%',  color: '#eab308', label: 'Good' },
+        { pct: '100%', color: '#22c55e', label: 'Strong' },
+    ];
+    const lvl = levels[Math.min(score, 4)];
+    bar.style.width     = lvl.pct;
+    bar.style.background = lvl.color;
+    lbl.textContent     = lvl.label;
+    lbl.style.color     = lvl.color;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+async function exportData() {
+    const btn = document.getElementById('exportDataBtn');
+    const orig = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Exporting…'; }
+    try {
+        const response = await fetch('/admin/export-data', { method: 'GET', headers: { 'X-CSRFToken': csrfToken } });
+        if (!response.ok) throw new Error('Export failed: ' + response.status);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'icst_export_' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        showToast('✅ Export downloaded successfully!');
+    } catch (err) {
+        showToast('❌ Export failed: ' + err.message, true);
+    } finally {
+        if (btn && orig) { btn.disabled = false; btn.innerHTML = orig; }
+    }
+}
+
+async function clearHistory() {
+    document.getElementById('clearHistoryModal').style.display = 'flex';
+    document.getElementById('clearHistoryConfirmBtn').focus();
+}
+
+async function executeClearHistory() {
+    document.getElementById('clearHistoryModal').style.display = 'none';
+    const btn = document.getElementById('clearHistoryBtn');
+    const orig = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Clearing…'; }
+    try {
+        const response = await fetch('/admin/clear-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
+        });
+        const data = await response.json();
+        if (response.ok && data.status === 'success') {
+            showToast('✅ Cleared ' + (data.deleted || 0) + ' conversations.');
+        } else {
+            throw new Error(data.message || 'Clear failed');
+        }
+    } catch (err) {
+        showToast('❌ ' + err.message, true);
+    } finally {
+        if (btn && orig) { btn.disabled = false; btn.innerHTML = orig; }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APPEARANCE
+// ══════════════════════════════════════════════════════════════════════════════
+async function setTheme(color, el) {
+    document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.remove('selected');
+        s.setAttribute('aria-checked', 'false');
+    });
+    if (el) { el.classList.add('selected'); el.setAttribute('aria-checked', 'true'); }
+    const ok = await saveSetting('theme_color', color);
+    if (ok) showToast(`Theme: ${color}`);
+}
+
+async function toggleDarkMode() {
+    const enabled = document.getElementById('darkModeToggle').checked;
+    document.body.classList.toggle('dark', enabled);
+    // Persist to localStorage so ALL admin pages pick it up instantly
+    localStorage.setItem('icst_dark_mode', String(enabled));
+    const ok = await saveSetting('dark_mode', enabled);
+    if (ok) showToast(enabled ? 'Dark mode on' : 'Light mode on');
+    else {
+        document.body.classList.toggle('dark', !enabled);
+        localStorage.setItem('icst_dark_mode', String(!enabled));
+        document.getElementById('darkModeToggle').checked = !enabled;
+    }
+}
+
+async function setFontSize(size) {
+    const map = { small: '14px', medium: '16px', large: '18px' };
+    document.documentElement.style.setProperty('--font-size', map[size] || '16px');
+    document.getElementById('settingsBody').dataset.fontSize = size;
+    const ok = await saveSetting('font_size', size);
+    if (ok) showToast(`Font size: ${size}`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RECOMMENDATION TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+async function toggleRecType(type, el) {
+    const enabled = !el.classList.contains('selected');
+    el.classList.toggle('selected', enabled);
+    el.setAttribute('aria-pressed', String(enabled));
+    const ok = await saveSetting(`rec_type_${type}`, enabled);
+    if (ok) showToast(`${type}: ${enabled ? 'on' : 'off'}`);
+    else {
+        el.classList.toggle('selected', !enabled);
+        el.setAttribute('aria-pressed', String(!enabled));
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LANGUAGE TAGS
+// ══════════════════════════════════════════════════════════════════════════════
+async function toggleLanguage(lang, el) {
+    const enabled = !el.classList.contains('selected');
+    el.classList.toggle('selected', enabled);
+    el.setAttribute('aria-pressed', String(enabled));
+    const ok = await saveSetting(`language_${lang}`, enabled);
+    if (ok) showToast(`${lang}: ${enabled ? 'enabled' : 'disabled'}`);
+    else {
+        el.classList.toggle('selected', !enabled);
+        el.setAttribute('aria-pressed', String(!enabled));
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REPORT SCHEDULE
+// ══════════════════════════════════════════════════════════════════════════════
+async function saveReportSchedule() {
+    const daily  = document.getElementById('dailyReport')?.value;
+    const weekly = document.getElementById('weeklyReport')?.value;
+    const btn = document.querySelector('[onclick="saveReportSchedule()"]');
+    const origHTML = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+    try {
+        const res = await fetch(SETTINGS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ daily_report: daily, weekly_report: weekly })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) showToast('✅ Report schedule saved');
+        else showToast(data.error || '❌ Failed to save schedule', true);
+    } catch {
+        showToast('❌ Network error — schedule not saved', true);
+    } finally {
+        if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
+    }
+}
+</script>
+
+<!-- Clear History confirmation modal -->
+<div id="clearHistoryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="clearHistoryModalTitle">
+    <div style="background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:settingsModalIn 0.2s ease;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+            <div style="width:42px;height:42px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-exclamation-triangle" style="color:#dc2626;font-size:18px;" aria-hidden="true"></i>
+            </div>
+            <h2 id="clearHistoryModalTitle" style="font-size:1.05rem;font-weight:700;color:#1e1b4b;margin:0;">Delete All Conversation History?</h2>
+        </div>
+        <p style="color:#6b7280;font-size:0.875rem;line-height:1.6;margin-bottom:1.5rem;">This will permanently delete <strong>all</strong> stored conversations from the database. Analytics data will also be affected. This action <strong>cannot be undone</strong>.</p>
+        <div style="display:flex;gap:10px;">
+            <button onclick="document.getElementById('clearHistoryModal').style.display='none'" style="flex:1;padding:10px;border:1px solid #e5e7eb;background:#fff;border-radius:10px;font-size:0.875rem;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">Cancel</button>
+            <button id="clearHistoryConfirmBtn" onclick="executeClearHistory()" style="flex:1;padding:10px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-size:0.875rem;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                <i class="fas fa-trash" aria-hidden="true"></i> Delete All
+            </button>
+        </div>
+    </div>
+</div>
+<style>
+    @keyframes settingsModalIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+</style>
+<script>
+    document.getElementById('clearHistoryModal').addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('clearHistoryModal')?.style.display === 'flex') {
+            document.getElementById('clearHistoryModal').style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>

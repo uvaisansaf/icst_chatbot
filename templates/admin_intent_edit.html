@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Edit Intent – ICST Admin">
+    <meta name="theme-color" content="#7E1332">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>Edit Intent · ICST Admin</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary:      #7E1332;
+            --primary-lt:   #fce7ed;
+            --gold:         #c9a03d;
+            --emerald:      #059669;
+            --red:          #dc2626;
+            --glass-bg:     rgba(255,255,255,0.80);
+            --glass-border: rgba(255,255,255,0.4);
+            --sidebar-w:    17rem;
+            --radius-xl:    1.25rem;
+            --radius-lg:    0.875rem;
+            --shadow:       0 4px 24px rgba(126,19,50,0.08);
+            --shadow-hover: 0 12px 40px rgba(126,19,50,0.14);
+            --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fce7ed 0%, #fff5f7 55%, #fff8f0 100%);
+            min-height: 100vh; overflow-x: hidden; color: #1e0a13;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: #f0a0b5; border-radius: 99px; }
+        .app-shell { display: flex; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; max-width: calc(100vw - var(--sidebar-w)); }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+        }
+
+        /* ── Sidebar ─────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w); flex-shrink: 0;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            position: fixed; top: 0; left: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            z-index: 50; transition: transform 0.3s;
+        }
+        .sidebar-brand { padding: 1.75rem 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.35); }
+        .brand-icon { width: 2.75rem; height: 2.75rem; background: linear-gradient(135deg, var(--primary), #9a1a3e); border-radius: 0.875rem; display: flex; align-items: center; justify-content: center; }
+        .brand-icon img { width: 2rem; height: 2rem; object-fit: contain; }
+        .brand-text { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+        .brand-sub { font-size: 0.7rem; color: #9e7080; margin-top: 1px; }
+        .sidebar-nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .nav-section-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #b08090; padding: 0.5rem 0.75rem 0.25rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.875rem; border-radius: var(--radius-lg); text-decoration: none; color: #7a3050; font-size: 0.875rem; font-weight: 500; transition: all var(--transition); margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(126,19,50,0.08); color: var(--primary); }
+        .nav-item.active { background: linear-gradient(135deg, rgba(126,19,50,0.12), rgba(154,26,62,0.08)); color: var(--primary); font-weight: 600; box-shadow: inset 3px 0 0 var(--primary); }
+        .nav-item i { width: 1.1rem; text-align: center; font-size: 0.9rem; }
+        .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.35); }
+        .user-row { display: flex; align-items: center; gap: 0.75rem; }
+        .user-avatar { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #9a1a3e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.8rem; }
+        .user-name { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+        .user-role { font-size: 0.65rem; color: #9e7080; }
+        .logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #b08090; font-size: 0.9rem; transition: color var(--transition); }
+        .logout-btn:hover { color: var(--red); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 60; background: var(--primary); color: white; border: none; border-radius: 0.75rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-toggle { display: flex; align-items: center; }
+            .sidebar-overlay.visible { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; max-width: 100vw; }
+        }
+
+        /* ── Page Header ─────────────────────────────────── */
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #9e7080; flex-wrap: wrap; }
+        .breadcrumb a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb span { opacity: 0.5; }
+        .page-title { font-size: 1.5rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; margin-top: 4px; }
+
+        /* ── Two-column Layout ───────────────────────────── */
+        .edit-grid {
+            display: grid; gap: 1.25rem;
+            grid-template-columns: 1fr 1fr;
+        }
+        @media (max-width: 900px) { .edit-grid { grid-template-columns: 1fr; } }
+
+        /* ── Form ────────────────────────────────────────── */
+        .form-section { padding: 1.375rem; }
+        .section-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: #7a3050; margin-bottom: 5px; }
+        .form-label .req { color: var(--red); margin-left: 2px; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%; padding: 9px 13px;
+            border: 1.5px solid rgba(126,19,50,0.15);
+            border-radius: var(--radius-lg); font-size: 0.875rem;
+            font-family: inherit; background: rgba(255,255,255,0.9);
+            outline: none; color: #1e0a13;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: rgba(126,19,50,0.45);
+            box-shadow: 0 0 0 3px rgba(126,19,50,0.08);
+        }
+        .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+        .form-check { display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; }
+        .form-check input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+        .form-check-label { font-size: 0.875rem; font-weight: 500; color: #3d0a1a; cursor: pointer; }
+        .form-error { font-size: 0.75rem; color: var(--red); margin-top: 4px; }
+        .form-hint { font-size: 0.72rem; color: #9e7080; margin-top: 3px; }
+
+        /* ── Pattern / Response Lists ────────────────────── */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 36px; padding: 4px; }
+        .tag-item {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 0.78rem; font-weight: 500;
+            max-width: 100%; word-break: break-word;
+        }
+        .tag-item.pattern  { background: #dbeafe; color: #1d4ed8; }
+        .tag-item.response { background: #dcfce7; color: #166534; }
+        .tag-item .remove-tag {
+            cursor: pointer; font-size: 0.9rem; line-height: 1;
+            opacity: 0.6; transition: opacity 0.2s; background: none;
+            border: none; padding: 0; color: inherit; flex-shrink: 0;
+        }
+        .tag-item .remove-tag:hover { opacity: 1; }
+
+        /* ── Add tag input ───────────────────────────────── */
+        .add-tag-row { display: flex; gap: 7px; align-items: flex-start; }
+        .add-tag-input { flex: 1; }
+        .lang-select { width: 80px; flex-shrink: 0; }
+        .add-tag-btn {
+            padding: 9px 14px; border-radius: var(--radius-lg); border: none;
+            cursor: pointer; font-size: 0.82rem; font-weight: 600; font-family: inherit;
+            transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+        }
+        .add-tag-btn.pattern-btn  { background: #dbeafe; color: #1d4ed8; }
+        .add-tag-btn.pattern-btn:hover  { background: #bfdbfe; }
+        .add-tag-btn.response-btn { background: #dcfce7; color: #166534; }
+        .add-tag-btn.response-btn:hover { background: #bbf7d0; }
+
+        /* ── Buttons ─────────────────────────────────────── */
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 0.55rem 1.1rem; border-radius: var(--radius-lg); font-size: 0.875rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all var(--transition); text-decoration: none; white-space: nowrap; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #9a1a3e); color: white; box-shadow: 0 4px 12px rgba(126,19,50,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(126,19,50,0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-ghost { background: rgba(126,19,50,0.07); color: var(--primary); border: 1px solid rgba(126,19,50,0.15); }
+        .btn-ghost:hover { background: rgba(126,19,50,0.12); }
+        .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
+
+        /* ── Save bar ────────────────────────────────────── */
+        .save-bar {
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+            padding: 1rem 1.375rem; border-top: 1px solid rgba(126,19,50,0.08);
+        }
+
+        /* ── Toast ───────────────────────────────────────── */
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background: #1e0a13; color: white; padding: 12px 18px; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: toastIn 0.3s ease; max-width: 320px; }
+        .toast.success { border-left: 3px solid #4ade80; }
+        .toast.error   { border-left: 3px solid #f87171; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+        /* ── Spinner ─────────────────────────────────────── */
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 4px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div class="brand-icon">
+                    <img src="/static/images/ICST-Logo-Final@4x-1.png"
+                         onerror="this.parentElement.innerHTML='🎓'" alt="ICST">
+                </div>
+                <div>
+                    <div class="brand-text">ICST Admin</div>
+                    <div class="brand-sub">Chatbot Control Panel</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">Content</div>
+            <a href="{{ url_for('admin_intents') }}" class="nav-item active">
+                <i class="fas fa-brain"></i> Q&amp;A Intents
+            </a>
+            <a href="{{ url_for('admin_user_conversations') }}" class="nav-item">
+                <i class="fas fa-comments"></i> Conversations
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">System</div>
+            <a href="{{ url_for('admin_settings') }}" class="nav-item">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-item" target="_blank">
+                <i class="fas fa-external-link-alt"></i> View Chatbot
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-row">
+                <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+                <div>
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="toast {{ 'success' if category in ('success','info') else 'error' }}"
+             style="position:relative;bottom:auto;right:auto;margin-bottom:1rem;max-width:100%">
+            <i class="fas {{ 'fa-check-circle' if category in ('success','info') else 'fa-exclamation-circle' }}"
+               style="margin-right:6px"></i>{{ message }}
+        </div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+
+        <!-- Breadcrumb + Header -->
+        <div class="page-header">
+            <div>
+                <div class="breadcrumb">
+                    <a href="{{ url_for('admin_intents') }}">Q&amp;A Intents</a>
+                    <span>/</span>
+                    <span>Edit</span>
+                </div>
+                <h1 class="page-title">{{ intent.name or intent.tag }}</h1>
+            </div>
+            <div style="display:flex;gap:8px">
+                <a href="{{ url_for('admin_intents') }}" class="btn btn-ghost btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Edit Grid -->
+        <div class="edit-grid">
+
+            <!-- Left: Basic Info -->
+            <div>
+                <div class="glass" style="margin-bottom:1.25rem">
+                    <form method="POST" id="intentForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-info-circle"></i> Intent Details
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="intentTag">
+                                    Tag <span class="req">*</span>
+                                </label>
+                                <input class="form-input" type="text" id="intentTag" name="tag"
+                                       value="{{ form.tag.data or intent.tag }}"
+                                       placeholder="e.g. how_to_apply" required
+                                       style="font-family:'DM Mono',monospace;font-size:0.82rem">
+                                <div class="form-hint">Unique identifier. Use lowercase_with_underscores.</div>
+                                {% for e in form.tag.errors %}
+                                <div class="form-error">{{ e }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="intentName">
+                                    Display Name <span class="req">*</span>
+                                </label>
+                                <input class="form-input" type="text" id="intentName" name="name"
+                                       value="{{ form.name.data or intent.name }}"
+                                       placeholder="e.g. How to Apply" required>
+                                {% for e in form.name.errors %}
+                                <div class="form-error">{{ e }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="intentDesc">Description</label>
+                                <textarea class="form-textarea" id="intentDesc" name="description"
+                                          placeholder="Optional: what this intent covers…"
+                                          rows="3">{{ form.description.data or intent.description or '' }}</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-check">
+                                    <input type="checkbox" name="is_active" id="intentActive"
+                                           {{ 'checked' if (form.is_active.data if form.is_active.data is not none else intent.is_active) }}>
+                                    <span class="form-check-label">Intent is Active</span>
+                                </label>
+                                <div class="form-hint">Inactive intents are skipped during matching.</div>
+                            </div>
+                        </div>
+
+                        <div class="save-bar">
+                            <button type="submit" class="btn btn-primary" id="saveBtn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{{ url_for('admin_intents') }}" class="btn btn-ghost">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right: Patterns + Responses -->
+            <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+                <!-- Patterns -->
+                <div class="glass">
+                    <div class="form-section" style="padding-bottom:0.5rem">
+                        <div class="section-title">
+                            <i class="fas fa-list-ul" style="color:#1d4ed8"></i> Training Patterns
+                            <span style="margin-left:auto;font-size:0.7rem;font-weight:400;color:#9e7080">
+                                {{ patterns|length }} pattern{{ 's' if patterns|length != 1 }}
+                            </span>
+                        </div>
+                        <div class="tag-list" id="patternList">
+                            {% for p in patterns %}
+                            <span class="tag-item pattern" data-id="{{ p.id }}">
+                                <span>{{ p.pattern_text }}</span>
+                                <span style="font-size:0.65rem;opacity:0.6;margin:0 2px">{{ p.language }}</span>
+                                <button class="remove-tag" onclick="removePattern({{ p.id }}, this)"
+                                        title="Remove" aria-label="Remove pattern">×</button>
+                            </span>
+                            {% endfor %}
+                            {% if not patterns %}
+                            <span id="noPatternsHint" style="font-size:0.78rem;color:#b08090;font-style:italic;padding:4px">
+                                No patterns yet — add some below
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="add-tag-row" style="padding-bottom:1rem">
+                            <input class="form-input add-tag-input" type="text" id="newPattern"
+                                   placeholder="Add a question pattern (Enter to add)"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();addPattern()}"
+                                   maxlength="400" autocomplete="off">
+                            <select class="form-select lang-select" id="patternLang">
+                                <option value="en">EN</option>
+                                <option value="ta">TA</option>
+                                <option value="si">SI</option>
+                            </select>
+                            <button class="add-tag-btn pattern-btn" onclick="addPattern()">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Responses -->
+                <div class="glass">
+                    <div class="form-section" style="padding-bottom:0.5rem">
+                        <div class="section-title">
+                            <i class="fas fa-reply" style="color:#166534"></i> Responses
+                            <span style="margin-left:auto;font-size:0.7rem;font-weight:400;color:#9e7080">
+                                {{ responses|length }} response{{ 's' if responses|length != 1 }}
+                            </span>
+                        </div>
+                        <div class="tag-list" id="responseList">
+                            {% for r in responses %}
+                            <span class="tag-item response" data-id="{{ r.id }}"
+                                  style="max-width:100%;white-space:normal;align-items:flex-start">
+                                <span style="flex:1;word-break:break-word">{{ r.response_text[:120] }}{{ '…' if r.response_text|length > 120 }}</span>
+                                <span style="font-size:0.65rem;opacity:0.6;white-space:nowrap;margin:0 2px">{{ r.language }}</span>
+                                <button class="remove-tag" onclick="removeResponse({{ r.id }}, this)"
+                                        title="Remove" aria-label="Remove response">×</button>
+                            </span>
+                            {% endfor %}
+                            {% if not responses %}
+                            <span id="noResponsesHint" style="font-size:0.78rem;color:#b08090;font-style:italic;padding:4px">
+                                No responses yet — add one below
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div style="padding-bottom:1rem">
+                            <textarea class="form-textarea" id="newResponse"
+                                      placeholder="Add a response (supports multi-line text, emojis, URLs)…"
+                                      rows="3" style="margin-bottom:8px"></textarea>
+                            <div class="add-tag-row">
+                                <select class="form-select lang-select" id="responseLang">
+                                    <option value="en">EN</option>
+                                    <option value="ta">TA</option>
+                                    <option value="si">SI</option>
+                                </select>
+                                <button class="add-tag-btn response-btn" onclick="addResponse()" style="flex:1">
+                                    <i class="fas fa-plus"></i> Add Response
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div><!-- /.edit-grid -->
+
+    </main>
+</div>
+
+<script>
+'use strict';
+const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.content || '';
+const intentId   = {{ intent.id }};
+const apiPatterns  = `/admin/intents/${intentId}/patterns`;
+const apiResponses = `/admin/intents/${intentId}/responses`;
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('visible');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}" style="margin-right:6px"></i>${msg}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── Add Pattern ──────────────────────────────────────────────
+function addPattern() {
+    const input = document.getElementById('newPattern');
+    const text  = input.value.trim();
+    const lang  = document.getElementById('patternLang').value;
+    if (!text) { input.focus(); return; }
+
+    fetch(apiPatterns, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ text, language: lang })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            appendPatternTag(data.id, text, lang);
+            input.value = '';
+            input.focus();
+            removePlaceholder('noPatternsHint');
+            showToast('Pattern added.', 'success');
+        } else {
+            showToast(data.error || 'Failed to add pattern.', 'error');
+        }
+    })
+    .catch(() => showToast('Network error.', 'error'));
+}
+
+function appendPatternTag(id, text, lang) {
+    const list = document.getElementById('patternList');
+    const span = document.createElement('span');
+    span.className = 'tag-item pattern';
+    span.dataset.id = id;
+    const safeText = text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    span.innerHTML = `
+        <span>${safeText}</span>
+        <span style="font-size:0.65rem;opacity:0.6;margin:0 2px">${lang}</span>
+        <button class="remove-tag" onclick="removePattern(${id},this)" title="Remove">×</button>`;
+    list.appendChild(span);
+}
+
+function removePattern(id, btn) {
+    btn.disabled = true;
+    fetch(apiPatterns, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.querySelector(`.tag-item.pattern[data-id="${id}"]`);
+            if (item) item.remove();
+            showToast('Pattern removed.', 'success');
+        } else {
+            btn.disabled = false;
+            showToast(data.error || 'Remove failed.', 'error');
+        }
+    })
+    .catch(() => { btn.disabled = false; showToast('Network error.', 'error'); });
+}
+
+// ── Add Response ─────────────────────────────────────────────
+function addResponse() {
+    const textarea = document.getElementById('newResponse');
+    const text     = textarea.value.trim();
+    const lang     = document.getElementById('responseLang').value;
+    if (!text) { textarea.focus(); return; }
+
+    fetch(apiResponses, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ text, language: lang })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            appendResponseTag(data.id, text, lang);
+            textarea.value = '';
+            textarea.focus();
+            removePlaceholder('noResponsesHint');
+            showToast('Response added.', 'success');
+        } else {
+            showToast(data.error || 'Failed to add response.', 'error');
+        }
+    })
+    .catch(() => showToast('Network error.', 'error'));
+}
+
+function appendResponseTag(id, text, lang) {
+    const list = document.getElementById('responseList');
+    const span = document.createElement('span');
+    span.className = 'tag-item response';
+    span.dataset.id = id;
+    span.style.maxWidth = '100%';
+    span.style.whiteSpace = 'normal';
+    span.style.alignItems = 'flex-start';
+    const preview = text.length > 120 ? text.slice(0,120) + '…' : text;
+    const safePrev = preview.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    span.innerHTML = `
+        <span style="flex:1;word-break:break-word">${safePrev}</span>
+        <span style="font-size:0.65rem;opacity:0.6;white-space:nowrap;margin:0 2px">${lang}</span>
+        <button class="remove-tag" onclick="removeResponse(${id},this)" title="Remove">×</button>`;
+    list.appendChild(span);
+}
+
+function removeResponse(id, btn) {
+    btn.disabled = true;
+    fetch(apiResponses, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.querySelector(`.tag-item.response[data-id="${id}"]`);
+            if (item) item.remove();
+            showToast('Response removed.', 'success');
+        } else {
+            btn.disabled = false;
+            showToast(data.error || 'Remove failed.', 'error');
+        }
+    })
+    .catch(() => { btn.disabled = false; showToast('Network error.', 'error'); });
+}
+
+function removePlaceholder(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+// ── Save form ────────────────────────────────────────────────
+document.getElementById('intentForm').addEventListener('submit', function() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Saving…';
+});
+
+// ── Auto-dismiss flash ───────────────────────────────────────
+document.querySelectorAll('.toast[style*="position:relative"]').forEach(el => {
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000);
+    el.style.transition = 'opacity 0.3s';
+});
+</script>
+</body>
+</html>

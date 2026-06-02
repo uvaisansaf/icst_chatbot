@@ -1,0 +1,2619 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="ICST University Chatbot – Instant answers about admissions, courses, and campus life">
+    <meta name="theme-color" content="#4a0b1e">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>ICST University Chatbot - AI Assistant</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-navy: #7E1332;
+            --primary-gold: #c9a03d;
+            --bg-gray: #f4f7f9;
+            --text-main: #2c3e50;
+            --text-muted: #919ba1;
+            --bot-bubble: #ffffff;
+            --user-bubble: #7E1332;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Segoe UI', 'Poppins', Roboto, Helvetica, Arial, sans-serif; 
+        }
+        
+        body { 
+            background: linear-gradient(135deg, #5c1226 0%, #3a0b1e 100%);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(201,160,61,0.1) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+        }
+        
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(201,160,61,0.08) 0%, transparent 70%);
+            bottom: -150px;
+            left: -150px;
+            border-radius: 50%;
+        }
+
+        .chat-widget {
+            width: 420px;
+            height: 680px;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+        
+        .chat-widget.minimized {
+            width: 80px !important;
+            height: 80px !important;
+            border-radius: 50% !important;
+            cursor: pointer;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            background: transparent !important;
+            transition: all 0.4s ease;
+        }
+
+        .chat-widget.minimized .chat-body,
+        .chat-widget.minimized .chat-footer,
+        .chat-widget.minimized .online-status,
+        .chat-widget.minimized .user-info,
+        .chat-widget.minimized .header-top-icons,
+        .chat-widget.minimized .feedback-section,
+        .chat-widget.minimized .recommendation-buttons {
+            display: none !important;
+        }
+
+        .chat-widget.minimized .chat-header {
+            padding: 0 !important;
+            clip-path: none !important;
+            height: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: transparent !important;
+        }
+
+        .chat-widget.minimized .header-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .chat-widget.minimized .avatar {
+            width: 80px !important;
+            height: 80px !important;
+            border-radius: 50% !important;
+            border: 3px solid var(--primary-gold) !important;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
+            object-fit: cover !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .chat-widget.minimized .avatar:hover {
+            transform: scale(1.08);
+            border: 3px solid white !important;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #9a1a3e 100%);
+            color: white;
+            padding: 24px 24px 36px 24px;
+            position: relative;
+            clip-path: ellipse(150% 100% at 50% 0%);
+            transition: all 0.3s ease;
+        }
+
+        .header-top-icons {
+            position: absolute;
+            right: 20px;
+            top: 22px;
+            display: flex;
+            gap: 16px;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.9;
+            z-index: 10;
+        }
+        
+        .header-top-icons i {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .header-top-icons i:hover {
+            transform: scale(1.15);
+            opacity: 1;
+            color: var(--primary-gold);
+        }
+
+        .header-content { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 12px; 
+        }
+        
+        .avatar { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 3px solid var(--primary-gold);
+            background: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .user-info span { 
+            font-size: 11px; 
+            opacity: 0.8; 
+            display: block; 
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        .user-info h4 { 
+            margin: 0; 
+            font-size: 18px; 
+            font-weight: 700; 
+            letter-spacing: 0.3px;
+        }
+        
+        .online-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            width: fit-content;
+            backdrop-filter: blur(8px);
+            margin-top: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 5px #4ade80;
+        }
+        
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+            box-shadow: 0 0 5px #ef4444;
+        }
+        
+        .status-text {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes recording-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        .recording-pulse {
+            animation: recording-pulse 1.5s cubic-bezier(0.2, 0, 0, 1) infinite;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: linear-gradient(180deg, #f8f9fc 0%, #f0f2f6 100%);
+            scrollbar-width: thin;
+        }
+        
+        .chat-body::-webkit-scrollbar { width: 5px; }
+        .chat-body::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 10px; }
+        .chat-body::-webkit-scrollbar-thumb { background: var(--primary-navy); border-radius: 10px; }
+
+        .typing-indicator {
+            background: var(--bot-bubble);
+            padding: 12px 18px;
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+            display: inline-flex;
+            gap: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-navy);
+            border-radius: 50%;
+            animation: typingAnim 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingAnim {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+
+        .message { 
+            max-width: 85%; 
+            padding: 12px 16px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            line-height: 1.45;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            animation: slideIn 0.3s ease-out;
+            word-wrap: break-word;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-msg { 
+            background: var(--bot-bubble); 
+            color: var(--text-main); 
+            align-self: flex-start; 
+            border-bottom-left-radius: 5px; 
+            border: 1px solid #eef2f6;
+        }
+
+        .user-msg { 
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #9a1a3e 100%);
+            color: white; 
+            align-self: flex-end; 
+            border-bottom-right-radius: 5px; 
+        }
+        
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 6px;
+            text-align: right;
+        }
+        
+        .user-msg .message-time { color: rgba(255,255,255,0.7); }
+        .bot-msg .message-time { color: var(--text-muted); }
+
+        /* Pause/resume button inside user bubble */
+        .user-voice-controls {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 7px;
+        }
+        .user-voice-controls.visible {
+            display: flex;
+        }
+        .user-pause-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+            font-family: inherit;
+            letter-spacing: 0.2px;
+        }
+        .user-pause-btn:hover {
+            background: rgba(255,255,255,0.28);
+            transform: scale(1.04);
+        }
+        .user-pause-btn:active { transform: scale(0.97); }
+        .user-pause-btn.paused {
+            background: rgba(255,255,255,0.28);
+            border-color: rgba(255,255,255,0.55);
+        }
+        .voice-wave {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 12px;
+        }
+        .voice-wave span {
+            display: inline-block;
+            width: 2.5px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 2px;
+            animation: wavebar 0.8s ease-in-out infinite;
+        }
+        .voice-wave span:nth-child(1) { height: 4px;  animation-delay: 0s;    }
+        .voice-wave span:nth-child(2) { height: 10px; animation-delay: 0.15s; }
+        .voice-wave span:nth-child(3) { height: 6px;  animation-delay: 0.3s;  }
+        .voice-wave span:nth-child(4) { height: 12px; animation-delay: 0.1s;  }
+        .voice-wave span:nth-child(5) { height: 5px;  animation-delay: 0.25s; }
+        .user-pause-btn.paused .voice-wave span { animation-play-state: paused; }
+        @keyframes wavebar {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.6; }
+            50%       { transform: scaleY(1);   opacity: 1;   }
+        }
+
+        /* Language badge on bot messages */
+        .lang-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 6px;
+            vertical-align: middle;
+            opacity: 0.7;
+            letter-spacing: 0.3px;
+        }
+        .lang-badge.ta { background: #fef3c7; color: #92400e; }
+        .lang-badge.si { background: #ede9fe; color: #5b21b6; }
+
+        /* Audio play button inside message */
+        .msg-audio-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            background: rgba(126,19,50,0.07);
+            border: none;
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: var(--primary-navy);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .msg-audio-btn:hover { background: rgba(126,19,50,0.14); }
+        .msg-audio-btn.playing { color: var(--primary-gold); }
+
+        .chat-footer {
+            padding: 15px 20px 20px 20px;
+            background: white;
+            border-top: 1px solid #eef2f6;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f5f7fa;
+            border-radius: 30px;
+            padding: 5px 18px;
+            border: 1px solid #eef2f6;
+            transition: all 0.2s;
+        }
+        
+        .input-container:focus-within {
+            border-color: var(--primary-navy);
+            box-shadow: 0 0 0 2px rgba(126,19,50,0.1);
+        }
+
+        #chat-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px 5px;
+            font-size: 14px;
+            background: transparent;
+            color: var(--text-main);
+        }
+        #chat-input:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        #chat-input::placeholder { 
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .voice-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .voice-btn:hover { 
+            transform: scale(1.08);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .voice-btn.recording {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            animation: recording-pulse 1.5s infinite;
+        }
+        
+        .voice-btn.recording:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        
+        .voice-btn:active { transform: scale(0.95); }
+        .voice-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; animation: none; }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #9a1a3e 100%);
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .send-btn:hover { 
+            transform: scale(1.08);
+            background: linear-gradient(135deg, #9a1a3e 0%, #b01f45 100%);
+            box-shadow: 0 4px 12px rgba(126, 19, 50, 0.3);
+        }
+        
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn i { font-size: 14px; }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .feedback-section {
+            padding: 10px 20px;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-end;
+            font-size: 12px;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .feedback-section span { 
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        
+        .feedback-section i { 
+            cursor: pointer; 
+            font-size: 18px; 
+            transition: all 0.2s;
+            color: #9ca3af;
+        }
+        
+        .feedback-section i:hover { 
+            transform: scale(1.15);
+        }
+        
+        .feedback-up-active, .feedback-up:hover { color: #10b981 !important; }
+        .feedback-down-active, .feedback-down:hover { color: #ef4444 !important; }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 22px;
+            border-radius: 40px;
+            text-decoration: none;
+            color: var(--primary-navy);
+            font-weight: 600;
+            font-size: 13px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .admin-link:hover {
+            background: var(--primary-navy);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .temp-message {
+            animation: fadeOut 3s forwards;
+        }
+        
+        @keyframes fadeOut {
+            0%, 70% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        .error-message {
+            background: #fee2e2 !important;
+            border-left: 3px solid #ef4444;
+            color: #991b1b !important;
+        }
+
+        .language-selector {
+            display: flex;
+            gap: 5px;
+            padding: 0 0 10px 0;
+            justify-content: center;
+        }
+        
+        .lang-btn {
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: none;
+            background: #f0f2f6;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .lang-btn.active {
+            background: var(--primary-navy);
+            color: white;
+        }
+        
+        .lang-btn:hover:not(.active) {
+            background: var(--primary-gold);
+            color: white;
+        }
+
+        /* Recording status indicator (replaces broken placeholder display) */
+        .recording-status {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #fee2e2;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #ef4444;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .recording-status.visible { display: flex; }
+        .recording-status .rec-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 1s infinite;
+        }
+
+        /* Translation chips */
+        .translate-btn-wrap { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+        .translate-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 9px; border-radius: 12px;
+            background: rgba(126,19,50,0.07); border: 1px solid rgba(126,19,50,0.15);
+            font-size: 11px; color: var(--primary-navy); cursor: pointer;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .translate-chip:hover { background: rgba(126,19,50,0.15); }
+        .translate-chip.translate-active { background: var(--primary-navy); color: white; }
+        .translate-chip:disabled { cursor: not-allowed; opacity: 0.6; }
+        .show-original-btn { background: rgba(201,160,61,0.1) !important; border-color: rgba(201,160,61,0.3) !important; color: #92400e !important; }
+        .show-original-btn:hover { background: rgba(201,160,61,0.2) !important; }
+        .lang-badge.en { background: #dbeafe; color: #1e40af; display: inline-block !important; }
+        .msg-text { display: inline; }
+
+        /* Streaming cursor */
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .streaming-cursor::after {
+            content: '▍';
+            display: inline-block;
+            margin-left: 1px;
+            color: var(--primary-navy);
+            animation: blink 0.8s step-end infinite;
+            font-size: 0.85em;
+            vertical-align: baseline;
+        }
+
+        /* Formatted bot-response HTML */
+        .bot-msg p {
+            margin: 0 0 6px 0;
+            line-height: 1.55;
+        }
+        .bot-msg p:last-child { margin-bottom: 0; }
+
+        .bot-msg p.chat-section-heading {
+            margin: 10px 0 4px;
+            font-size: 13px;
+        }
+        .bot-msg p.chat-section-heading:first-child { margin-top: 2px; }
+        .bot-msg p.chat-section-heading strong {
+            color: var(--primary-navy);
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .bot-msg ul, .bot-msg ol {
+            margin: 4px 0 8px 18px;
+            padding: 0;
+        }
+        .bot-msg ul { list-style: disc; }
+        .bot-msg ol { list-style: decimal; }
+        .bot-msg li {
+            margin-bottom: 3px;
+            line-height: 1.5;
+            font-size: 13.5px;
+        }
+
+        .bot-msg a {
+            color: var(--primary-navy);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(126,19,50,0.3);
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .bot-msg a:hover {
+            color: var(--primary-gold);
+            border-bottom-color: var(--primary-gold);
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="chat-widget" id="chatWidget" role="complementary" aria-label="ICST University Chat Assistant">
+    
+    <div class="chat-header">
+        <div class="header-top-icons">
+            <i id="voiceModeBtn" class="fas fa-microphone" title="Voice Mode"></i>
+            <i class="fas fa-angle-down" id="minimizeBtn" title="Minimize"></i>
+        </div>
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='images/IMG_7807.PNG') }}" 
+                 alt="ICST" 
+                 class="avatar" 
+                 onerror="this.src='https://ui-avatars.com/api/?background=c9a03d&color=fff&bold=true&size=100&name=ICST'">
+            <div class="user-info">
+                <span>Chat with</span>
+                <h4>ICST Assistant</h4>
+            </div>
+        </div>
+        <div class="online-status" id="onlineStatus">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-text" id="statusText">Online</span>
+        </div>
+    </div>
+
+    <div class="chat-body" id="chat-body" role="log" aria-live="polite" aria-label="Chat conversation" aria-relevant="additions">
+        <div class="message bot-msg" id="welcomeMsg" role="article" aria-label="Bot message">
+            Hello! Welcome to ICST University. How can I help you today? 😊<br>
+            <small style="color:var(--text-muted);font-size:11px;">
+                You can type in English · தமிழ் · සිංහල
+            </small>
+            <div class="message-time">Just now</div>
+        </div>
+    </div>
+
+    <div class="chat-footer" role="form" aria-label="Send a message">
+        <!-- Language Selector -->
+        <div class="language-selector" role="group" aria-label="Select language">
+            <button class="lang-btn active" data-lang="en" aria-pressed="true">🇬🇧 English</button>
+            <button class="lang-btn" data-lang="ta" aria-pressed="false">🇱🇰 தமிழ்</button>
+            <button class="lang-btn" data-lang="si" aria-pressed="false">🇱🇰 සිංහල</button>
+        </div>
+        <!-- Recording status bar (replaces broken placeholder approach) -->
+        <div class="recording-status" id="recordingStatus" aria-live="polite">
+            <span class="rec-dot"></span>
+            <span id="recordingStatusText">🎙️ Recording… Click ⏹ to stop</span>
+        </div>
+        <div class="input-container">
+            <input type="text" id="chat-input" placeholder="Type your question or click 🎤 to speak..."
+                   autocomplete="off" maxlength="500"
+                   aria-label="Type your message" aria-required="true">
+            <button class="voice-btn" id="voiceBtn" title="Speak your question"
+                    aria-label="Start voice input" aria-pressed="false">
+                <i class="fas fa-microphone" aria-hidden="true"></i>
+            </button>
+            <button class="send-btn" id="send-btn" aria-label="Send message">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="feedback-section">
+        <span>Was this helpful?</span>
+        <i class="far fa-thumbs-up feedback-up" id="feedback-up"></i>
+        <i class="far fa-thumbs-down feedback-down" id="feedback-down"></i>
+    </div>
+</div>
+
+<a href="{{ url_for('admin_login') }}" class="admin-link">
+    <i class="fas fa-lock"></i> Admin Login
+</a>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let currentConversationId  = null;
+let isTyping               = false;
+let isMinimized            = false;
+let isWaitingForResponse   = false;
+let currentLanguage        = 'en';
+let detectedLanguage       = 'en';
+
+// ── FIX #1: Voice transcript stored in a VARIABLE (not the placeholder) ──
+let _sttTranscript = '';   // ← stores the final STT result
+
+let lastInputMethod = 'text';  // 'text' or 'voice'
+let _voiceInputJustCompleted = false;
+
+// Web Speech API
+let recognition      = null;
+let isRecording      = false;
+let recordingTimer   = null;
+let recordingSeconds = 0;
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const sttSupported = !!SpeechRecognition;
+
+// TTS — SpeechSynthesis
+const synth = window.speechSynthesis;
+const VOICE_LANG = { en: 'en-US', ta: 'ta-IN', si: 'si-LK' };
+let   currentSpeakBtn = null;
+let   _activeUtter    = null;
+let   _synthPaused    = false;
+let   _activeSiAudio  = null;   // HTMLAudioElement for Sinhala backend TTS
+
+// CSRF token
+const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+
+// ═══════════════════════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════════════════════
+const chatWidget      = document.getElementById('chatWidget');
+const minimizeBtn     = document.getElementById('minimizeBtn');
+const sendBtn         = document.getElementById('send-btn');
+const voiceBtn        = document.getElementById('voiceBtn');
+const chatInput       = document.getElementById('chat-input');
+const feedbackUp      = document.getElementById('feedback-up');
+const feedbackDown    = document.getElementById('feedback-down');
+const chatBody        = document.getElementById('chat-body');
+const statusDot       = document.getElementById('statusDot');
+const statusText      = document.getElementById('statusText');
+const recordingStatus = document.getElementById('recordingStatus');
+const recordingStatusText = document.getElementById('recordingStatusText');
+
+// ═══════════════════════════════════════════════════════
+// PLACEHOLDER STRINGS PER LANGUAGE
+// ═══════════════════════════════════════════════════════
+const PLACEHOLDERS = {
+    en: 'Type your question or click 🎤 to speak...',
+    ta: 'உங்கள் கேள்வியை தட்டச்சு செய்யவும் அல்லது பேச 🎤 கிளிக் செய்யவும்...',
+    si: 'ඔබේ ප්‍රශ්නය ටයිප් කරන්න හෝ කතා කිරීමට 🎤 ක්ලික් කරන්න...'
+};
+
+const RECORDING_STATUS = {
+    en: '🎙️ Recording… Click ⏹ to stop',
+    ta: '🎙️ பதிவு செய்கிறது… ⏹ நிறுத்த கிளிக் செய்யவும்',
+    si: '🎙️ පටිගත කිරීම… ⏹ නැවැත්වීමට ක්ලික් කරන්න'
+};
+
+// ═══════════════════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════════════════
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function formatBotText(htmlOrText) {
+    if (!htmlOrText) return '';
+    if (!/<[a-z][\s\S]*>/i.test(htmlOrText)) {
+        return '<span class="msg-text">' + escapeHtml(htmlOrText).replace(/\n/g, '<br>') + '</span>';
+    }
+    return '<span class="msg-text">' + htmlOrText + '</span>';
+}
+
+function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════
+// LANGUAGE SELECTOR
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const newLang = this.dataset.lang;
+        if (newLang === currentLanguage) return;
+        document.querySelectorAll('.lang-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        this.classList.add('active');
+        this.setAttribute('aria-pressed', 'true');
+        currentLanguage = newLang;
+        if (!isRecording) {
+            chatInput.placeholder = PLACEHOLDERS[currentLanguage] || PLACEHOLDERS.en;
+        }
+    });
+});
+
+// ═══════════════════════════════════════════════════════
+// ONLINE STATUS
+// ═══════════════════════════════════════════════════════
+function updateConnectionStatus(online) {
+    if (online) {
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Online';
+    } else {
+        statusDot.className = 'status-dot offline';
+        statusText.textContent = 'Offline';
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// MINIMIZE / EXPAND
+// ═══════════════════════════════════════════════════════
+minimizeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    toggleMinimize();
+});
+
+chatWidget.addEventListener('click', function () {
+    if (isMinimized) toggleMinimize();
+});
+
+function toggleMinimize() {
+    chatWidget.classList.toggle('minimized');
+    isMinimized = chatWidget.classList.contains('minimized');
+    if (isMinimized) {
+        minimizeBtn.className = 'fas fa-expand';
+        minimizeBtn.title = 'Expand';
+    } else {
+        minimizeBtn.className = 'fas fa-angle-down';
+        minimizeBtn.title = 'Minimize';
+        setTimeout(() => chatInput.focus(), 300);
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// VOICE MODE BUTTON — hands-free auto-play mode
+// ═══════════════════════════════════════════════════════
+let handsFreeMode = false;
+document.getElementById('voiceModeBtn').addEventListener('click', function () {
+    handsFreeMode = !handsFreeMode;
+    if (handsFreeMode) {
+        this.style.color = 'var(--primary-gold)';
+        this.title = 'Hands-Free ON — click to turn off';
+        showTempMessage('🎙️ Hands-Free mode ON — responses will auto-play and mic starts automatically.');
+    } else {
+        this.style.color = '';
+        this.title = 'Voice Mode';
+        showTempMessage('🔇 Hands-Free mode OFF.');
+    }
+});
+
+// ═══════════════════════════════════════════════════════
+// ── FIX #2: Cached voices — refreshed properly ──────────
+// ═══════════════════════════════════════════════════════
+let _cachedVoices = [];
+
+function _refreshVoiceCache() {
+    if (!window.speechSynthesis) return;
+    const v = window.speechSynthesis.getVoices();
+    if (v && v.length > 0) _cachedVoices = v;
+}
+
+if (window.speechSynthesis) {
+    _refreshVoiceCache();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.addEventListener('voiceschanged', _refreshVoiceCache);
+    }
+    // Chrome lazy-loads voices, poll a few times
+    setTimeout(_refreshVoiceCache, 300);
+    setTimeout(_refreshVoiceCache, 800);
+    setTimeout(_refreshVoiceCache, 2000);
+}
+
+// ── Voice selection — EN/TA unchanged, SI gets ResponsiveVoice fallback ─
+function _selectVoice(langCode) {
+    const voices = (_cachedVoices.length ? _cachedVoices : (synth ? synth.getVoices() : []));
+    if (!voices || !voices.length) return null;
+
+    const FEMALE_KW = [
+        'female', 'woman', 'samantha', 'karen', 'victoria', 'moira', 'tessa',
+        'fiona', 'zira', 'hazel', 'susan', 'linda', 'alice', 'kalpana', 'heera',
+        'lekha', 'google uk english female', 'google us english',
+        'microsoft zira', 'microsoft hazel'
+    ];
+
+    let voice = null;
+
+    if (langCode === 'ta') {
+        // Known Tamil female voice names across platforms:
+        // Google: "Google தமிழ்" (Android/Chrome), "Lekha" (macOS/iOS Google)
+        // Microsoft: "Microsoft Heera" (Windows), "Microsoft Kalpana" (Windows)
+        // Apple: no native Tamil female; uses "Lekha" via Google
+        const TAMIL_FEMALE_NAMES = [
+            'lekha',        // Google Tamil Female (macOS, iOS, Android Chrome)
+            'kalpana',      // Microsoft Tamil Female (Windows)
+            'heera',        // Microsoft Hindi Female — sometimes listed for ta-IN
+            'kavya',        // Google Tamil Female (some Android builds)
+            'vaani',        // Google Hindi Female — fallback on some systems
+            'google தமிழ்', // Android Chrome native label
+            'female',       // generic keyword
+            'woman',
+        ];
+        // 1. Known Tamil female by name
+        voice = voices.find(v =>
+            v.lang.toLowerCase().startsWith('ta') &&
+            TAMIL_FEMALE_NAMES.some(k => v.name.toLowerCase().includes(k))
+        );
+        // 2. Any Tamil female via FEMALE_KW
+        if (!voice) voice = voices.find(v =>
+            v.lang.toLowerCase().startsWith('ta') &&
+            FEMALE_KW.some(k => v.name.toLowerCase().includes(k))
+        );
+        // 3. Voice with "lekha" or "kalpana" in name (any lang — covers cross-tag installs)
+        if (!voice) voice = voices.find(v =>
+            v.name.toLowerCase().includes('lekha') ||
+            v.name.toLowerCase().includes('kalpana')
+        );
+        // 4. Any Tamil voice (lang tag match)
+        if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith('ta'));
+        // 5. Voice with "tamil" in name (some platforms label differently)
+        if (!voice) voice = voices.find(v => v.name.toLowerCase().includes('tamil'));
+        // 6. Female English fallback (better than a random male voice)
+        if (!voice) voice = voices.find(v =>
+            v.lang.toLowerCase().startsWith('en') &&
+            FEMALE_KW.some(k => v.name.toLowerCase().includes(k))
+        );
+        // 7. Any English voice
+        if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+
+    } else if (langCode === 'si') {
+        // NOTE: si-LK is not available in Web Speech API on most browsers.
+        // _siUsesRV() decides whether to use ResponsiveVoice instead.
+        // This function is only called for Web Speech API path.
+        // 1. Native Sinhala voice (rare — Android Chrome sometimes has it)
+        voice = voices.find(v => v.lang.toLowerCase().startsWith('si'));
+        // 2. si-LK or si_LK in name
+        if (!voice) voice = voices.find(v =>
+            v.name.toLowerCase().includes('si-lk') || v.name.toLowerCase().includes('si_lk')
+        );
+        // 3. Female English fallback
+        if (!voice) voice = voices.find(v =>
+            v.lang.toLowerCase().startsWith('en') &&
+            FEMALE_KW.some(k => v.name.toLowerCase().includes(k))
+        );
+        // 4. Any English voice
+        if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+
+    } else {
+        // English — prefer female
+        voice = voices.find(v =>
+            v.lang.toLowerCase().startsWith('en') &&
+            FEMALE_KW.some(k => v.name.toLowerCase().includes(k))
+        );
+        if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith('en'));
+    }
+
+    return voice || (voices.length > 0 ? voices[0] : null);
+}
+
+// ── Sinhala: check if ResponsiveVoice should handle it ────────────────────
+// Returns true when no native si-LK voice is present (the common case).
+function _siUsesRV() {
+    if (typeof responsiveVoice === 'undefined') return false;
+    const voices = (_cachedVoices.length ? _cachedVoices : (synth ? synth.getVoices() : []));
+    const hasNativeSi = voices.some(v => v.lang.toLowerCase().startsWith('si'));
+    return !hasNativeSi;
+}
+
+
+async function playSinhalaBackendAudio(text, speakBtn) {
+    try {
+        const response = await fetch('/voice/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ text: text, lang: 'si' })
+        });
+        
+        const data = await response.json();
+        if (data.audio) {
+            const audio = new Audio(`data:${data.mime || 'audio/mpeg'};base64,${data.audio}`);
+            _activeSiAudio = audio;
+            if (speakBtn) {
+                currentSpeakBtn = speakBtn;
+                speakBtn.classList.add('playing');
+                speakBtn.innerHTML = '<i class="fas fa-stop"></i> ⏹ Stop';
+            }
+            audio.onplay = () => { _showLatestUserPauseControls(); };
+            audio.onended = () => {
+                _activeSiAudio = null;
+                _synthPaused = false;
+                if (speakBtn) {
+                    speakBtn.classList.remove('playing');
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                    if (currentSpeakBtn === speakBtn) currentSpeakBtn = null;
+                }
+                _hideAllUserPauseControls();
+            };
+            audio.onerror = () => {
+                _activeSiAudio = null;
+                _synthPaused = false;
+                if (speakBtn) {
+                    speakBtn.classList.remove('playing');
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                    if (currentSpeakBtn === speakBtn) currentSpeakBtn = null;
+                }
+                _hideAllUserPauseControls();
+            };
+            await audio.play();
+        }
+    } catch (err) {
+        console.warn('Backend TTS failed:', err);
+        _activeSiAudio = null;
+        if (typeof responsiveVoice !== 'undefined') {
+            _siSpeakRV(text, speakBtn);
+        }
+    }
+}
+// ── Sinhala TTS via ResponsiveVoice ───────────────────────────────────────
+
+function _siSpeakRV(text, speakBtn) {
+    if (typeof responsiveVoice === 'undefined') return Promise.resolve();
+
+    return new Promise((resolve) => {
+        // Stop any ongoing Web Speech API utterance first
+        if (synth && synth.speaking) {
+            try { synth.cancel(); } catch(e) {}
+        }
+
+        if (speakBtn) {
+            currentSpeakBtn = speakBtn;
+            speakBtn.classList.add('playing');
+            speakBtn.innerHTML = '<i class="fas fa-stop"></i> ⏹ Stop';
+        }
+
+        responsiveVoice.speak(text, 'UK English Female', {
+            rate: 0.88,
+            pitch: 1.05,
+            volume: 1,
+            onstart: function() {
+                _synthPaused = false;
+                _showLatestUserPauseControls();
+            },
+            onend: function() {
+                if (speakBtn) {
+                    speakBtn.classList.remove('playing');
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                    if (currentSpeakBtn === speakBtn) currentSpeakBtn = null;
+                }
+                _synthPaused = false;
+                _hideAllUserPauseControls();
+                resolve();
+            },
+            onerror: function() {
+                if (speakBtn) {
+                    speakBtn.classList.remove('playing');
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                    if (currentSpeakBtn === speakBtn) currentSpeakBtn = null;
+                }
+                _synthPaused = false;
+                _hideAllUserPauseControls();
+                resolve();
+            }
+        });
+    });
+}
+
+// ── Stop ResponsiveVoice if it is speaking ────────────────────────────────
+function _stopRV() {
+    try {
+        if (typeof responsiveVoice !== 'undefined' && responsiveVoice.isPlaying()) {
+            responsiveVoice.cancel();
+        }
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// TTS — SpeechSynthesis
+// ═══════════════════════════════════════════════════════
+function _stopSynth() {
+    // Stop Web Speech API
+    if (synth && synth.speaking) {
+        try { synth.cancel(); } catch(e) {}
+    }
+    // Stop ResponsiveVoice (Sinhala RV path)
+    _stopRV();
+    // Stop Sinhala backend HTMLAudioElement
+    if (_activeSiAudio) {
+        try { _activeSiAudio.pause(); _activeSiAudio.currentTime = 0; } catch(e) {}
+        _activeSiAudio = null;
+    }
+    _activeUtter = null;
+    _synthPaused = false;
+    if (currentSpeakBtn) {
+        currentSpeakBtn.classList.remove('playing');
+        currentSpeakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+        currentSpeakBtn = null;
+    }
+    _hideAllUserPauseControls();
+}
+
+function playAudioBase64(base64OrText, mime, speakBtn) {
+    _stopSynth();
+
+    let textToSpeak = '';
+    if (speakBtn && speakBtn.dataset && speakBtn.dataset.speakText) {
+        textToSpeak = speakBtn.dataset.speakText;
+    } else if (base64OrText && !/^[A-Za-z0-9+/=]{50,}$/.test(base64OrText)) {
+        textToSpeak = base64OrText;
+    } else {
+        const bubbles = chatBody.querySelectorAll('.bot-msg');
+        const last    = bubbles[bubbles.length - 1];
+        if (last) {
+            const t = document.createElement('div');
+            t.innerHTML = last.innerHTML;
+            textToSpeak = t.textContent.replace(/\s+/g, ' ').trim();
+        }
+    }
+    if (!textToSpeak) return Promise.resolve();
+
+    const msgLang = (speakBtn && speakBtn.dataset && speakBtn.dataset.lang)
+        ? speakBtn.dataset.lang
+        : (detectedLanguage || currentLanguage || 'en');
+
+    // ── SINHALA: Route through ResponsiveVoice ───────────────────────────
+    if (msgLang === 'si') {
+        if (_siUsesRV()) {
+            return _siSpeakRV(textToSpeak, speakBtn);
+        }
+        // Native si voice found (rare — e.g. Android) → fall through to Web Speech API below
+    }
+
+    // ── ENGLISH / TAMIL: Original Web Speech API path — UNCHANGED ────────
+    if (!synth) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+        function _doSpeak() {
+            try {
+                const utter  = new SpeechSynthesisUtterance(textToSpeak);
+                const BCP47  = { en: 'en-US', ta: 'ta-IN', si: 'si-LK' };
+                utter.lang   = BCP47[msgLang] || 'en-US';
+                utter.rate   = msgLang === 'ta' ? 0.88 : msgLang === 'si' ? 0.88 : 0.92;
+                utter.pitch  = msgLang === 'ta' ? 1.15 : 1.1;
+                utter.volume = 1.0;
+
+                const selectedVoice = _selectVoice(msgLang);
+                if (selectedVoice) utter.voice = selectedVoice;
+
+                _activeUtter = utter;
+                _synthPaused = false;
+
+                if (speakBtn) {
+                    currentSpeakBtn = speakBtn;
+                    speakBtn.classList.add('playing');
+                    speakBtn.innerHTML = '<i class="fas fa-stop"></i> ⏹ Stop';
+                }
+
+                utter.onend   = () => { _activeUtter = null; _stopSynth(); resolve(); };
+                utter.onerror = (e) => {
+                    _activeUtter = null;
+                    _stopSynth();
+                    if (e.error === 'interrupted' || e.error === 'canceled') resolve();
+                    else reject(e);
+                };
+
+                synth.speak(utter);
+                _showLatestUserPauseControls();
+            } catch(err) {
+                _activeUtter = null;
+                _stopSynth();
+                reject(err);
+            }
+        }
+
+        // Wait for voices if needed (Chrome lazy-loads)
+        if (_cachedVoices.length > 0) {
+            _doSpeak();
+        } else {
+            let waited = 0;
+            const poll = setInterval(() => {
+                _refreshVoiceCache();
+                waited += 100;
+                if (_cachedVoices.length > 0 || waited >= 2500) {
+                    clearInterval(poll);
+                    _doSpeak();
+                }
+            }, 100);
+        }
+    });
+}
+
+function toggleSynthPause(pauseBtn) {
+    const isPaused = _synthPaused;
+
+    // ── Sinhala backend Audio element ──────────────────────
+    if (_activeSiAudio) {
+        if (isPaused) {
+            _activeSiAudio.play().catch(console.warn);
+            _synthPaused = false;
+            if (pauseBtn) {
+                pauseBtn.classList.remove('paused');
+                const lbl = pauseBtn.querySelector('.pause-label');
+                if (lbl) lbl.textContent = 'Pause';
+            }
+        } else {
+            _activeSiAudio.pause();
+            _synthPaused = true;
+            if (pauseBtn) {
+                pauseBtn.classList.add('paused');
+                const lbl = pauseBtn.querySelector('.pause-label');
+                if (lbl) lbl.textContent = 'Resume';
+            }
+        }
+        return;
+    }
+
+    // ── ResponsiveVoice (Sinhala RV path) ──────────────────
+    if (typeof responsiveVoice !== 'undefined' && responsiveVoice.isPlaying()) {
+        if (isPaused) {
+            // RV has no native pause; cancel and re-speak from start is not
+            // ideal but there is no RV pause API on the free tier.
+            // Best available: treat as resume = do nothing visible change was
+            // already made, just flip state so UI is honest.
+            _synthPaused = false;
+            if (pauseBtn) {
+                pauseBtn.classList.remove('paused');
+                const lbl = pauseBtn.querySelector('.pause-label');
+                if (lbl) lbl.textContent = 'Pause';
+            }
+        } else {
+            responsiveVoice.pause();   // works on supported browsers
+            _synthPaused = true;
+            if (pauseBtn) {
+                pauseBtn.classList.add('paused');
+                const lbl = pauseBtn.querySelector('.pause-label');
+                if (lbl) lbl.textContent = 'Resume';
+            }
+        }
+        return;
+    }
+
+    // ── Web Speech API (English / Tamil) ───────────────────
+    if (!synth) return;
+    if (isPaused) {
+        synth.resume();
+        _synthPaused = false;
+        if (pauseBtn) {
+            pauseBtn.classList.remove('paused');
+            const lbl = pauseBtn.querySelector('.pause-label');
+            if (lbl) lbl.textContent = 'Pause';
+        }
+    } else {
+        synth.pause();
+        _synthPaused = true;
+        if (pauseBtn) {
+            pauseBtn.classList.add('paused');
+            const lbl = pauseBtn.querySelector('.pause-label');
+            if (lbl) lbl.textContent = 'Resume';
+        }
+    }
+}
+
+function _hideAllUserPauseControls() {
+    chatBody.querySelectorAll('.user-voice-controls.visible').forEach(el => {
+        el.classList.remove('visible');
+        const btn = el.querySelector('.user-pause-btn');
+        if (btn) {
+            btn.classList.remove('paused');
+            const lbl = btn.querySelector('.pause-label');
+            if (lbl) lbl.textContent = 'Pause';
+        }
+    });
+    _synthPaused = false;
+}
+
+function _showLatestUserPauseControls() {
+    _hideAllUserPauseControls();
+    const userBubbles = chatBody.querySelectorAll('.user-msg');
+    const last = userBubbles[userBubbles.length - 1];
+    if (last) {
+        const vc = last.querySelector('.user-voice-controls');
+        if (vc) vc.classList.add('visible');
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// ADD MESSAGE TO CHAT
+// ═══════════════════════════════════════════════════════
+function addMessage(text, isUser = false, isError = false, lang = null, audioBase64 = null, audioMime = null) {
+    const div = document.createElement('div');
+    let cls = isUser ? 'user-msg' : 'bot-msg';
+    if (isError) cls += ' error-message';
+    div.className = 'message ' + cls;
+
+    const safeLang = lang || (isUser ? currentLanguage : detectedLanguage) || 'en';
+
+    let inner = '';
+    if (isUser) {
+        inner = escapeHtml(text);
+        inner += `<div class="user-voice-controls" aria-label="Voice playback controls">
+                    <button class="user-pause-btn" title="Pause voice" aria-label="Pause voice playback">
+                        <span class="voice-wave">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </span>
+                        <span class="pause-label">Pause</span>
+                    </button>
+                  </div>`;
+    } else {
+        inner = formatBotText(text);
+        if (safeLang === 'ta') {
+            inner += ' <span class="lang-badge ta">தமிழ்</span>';
+        } else if (safeLang === 'si') {
+            inner += ' <span class="lang-badge si">සිංහල</span>';
+        }
+        if (!isError) {
+            inner += `<button class="msg-audio-btn" data-lang="${safeLang}" title="Play response">
+                        <i class="fas fa-volume-up"></i> 🔊 Play Response
+                      </button>`;
+        }
+    }
+
+    inner += `<div class="message-time">${nowTime()}</div>`;
+    div.innerHTML = inner;
+
+    if (!isUser && !isError) {
+        const btn = div.querySelector('.msg-audio-btn');
+        if (btn) {
+            const temp = document.createElement('div');
+            temp.innerHTML = formatBotText(text);
+            const plainText = temp.textContent.replace(/\s+/g, ' ').trim();
+            btn.dataset.speakText = plainText;
+            btn.dataset.lang = safeLang;
+            btn.addEventListener('click', function () {
+                if (synth && synth.speaking && currentSpeakBtn === this) {
+                    _stopSynth();
+                } else {
+                    playAudioBase64(null, null, this).catch(console.warn);
+                }
+            });
+        }
+    }
+
+    if (isUser) {
+        const pauseBtn = div.querySelector('.user-pause-btn');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', function () {
+                // Guard: something must be playing (any path)
+                const anythingPlaying = (synth && synth.speaking) ||
+                                        (_activeSiAudio && !_activeSiAudio.paused) ||
+                                        (typeof responsiveVoice !== 'undefined' && responsiveVoice.isPlaying()) ||
+                                        _synthPaused; // already paused — allow resume
+                if (!anythingPlaying) return;
+                toggleSynthPause(pauseBtn);
+            });
+        }
+    }
+
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    
+    if (!isUser && !isError) {
+        addTranslateButton(div, text, safeLang);
+    }
+    
+    return div;
+}
+
+// ═══════════════════════════════════════════════════════
+// TYPING INDICATOR
+// ═══════════════════════════════════════════════════════
+function showTyping() {
+    if (isTyping) return;
+    isTyping = true;
+    const d = document.createElement('div');
+    d.className = 'typing-indicator';
+    d.id = 'typingIndicator';
+    d.innerHTML = '<span></span><span></span><span></span>';
+    chatBody.appendChild(d);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function hideTyping() {
+    const d = document.getElementById('typingIndicator');
+    if (d) d.remove();
+    isTyping = false;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPORARY MESSAGE
+// ═══════════════════════════════════════════════════════
+function showTempMessage(msg, isError = false) {
+    const d = document.createElement('div');
+    d.className = 'message bot-msg temp-message' + (isError ? ' error-message' : '');
+    d.innerHTML = escapeHtml(msg) + `<div class="message-time">${nowTime()}</div>`;
+    chatBody.appendChild(d);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    setTimeout(() => { if (d.parentNode) d.remove(); }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// ── FIX #4: Web Speech API — STT (CRITICAL FIX) ─────────
+// BUG: original code read chatInput.placeholder for transcript.
+// FIX: store transcript in _sttTranscript variable; show
+//      interim results in the recording-status bar (not placeholder).
+// ═══════════════════════════════════════════════════════
+let autoStopTimeout = null;
+
+function _buildRecognition() {
+    if (!SpeechRecognition) return null;
+    const r = new SpeechRecognition();
+    r.continuous     = false;
+    r.interimResults = true;
+    r.lang           = VOICE_LANG[currentLanguage] || 'en-US';
+    r.maxAlternatives = 1;
+
+    r.onresult = (event) => {
+        let interim = '', finalTx = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const t = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTx += t;
+            } else {
+                interim += t;
+            }
+        }
+        // Update transcript variable (NOT the placeholder)
+        if (finalTx) _sttTranscript = finalTx.trim();
+        // Show interim in the status bar
+        const displayed = finalTx || interim;
+        if (displayed && recordingStatusText) {
+            recordingStatusText.textContent = displayed;
+        }
+    };
+
+    r.onend = () => {
+        const transcript = _sttTranscript;
+        resetVoiceButton();
+
+        if (transcript && transcript.length > 1) {
+            chatInput.value = transcript;
+            _voiceInputJustCompleted = true;
+            lastInputMethod = 'voice';
+            if (!isWaitingForResponse) sendMessage();
+        }
+        _sttTranscript = '';
+    };
+
+    r.onerror = (e) => {
+        console.warn('STT error:', e.error);
+        const msgs = {
+            'not-allowed':  '❌ Microphone access denied. Please allow microphone in browser settings.',
+            'no-speech':    '⚠️ No speech detected. Please try again.',
+            'network':      '⚠️ Network error during speech recognition.',
+            'aborted':      null,
+        };
+        const msg = msgs[e.error] !== undefined ? msgs[e.error] :
+                    '❌ Voice recognition error. Please try again.';
+        if (msg) showTempMessage(msg, e.error !== 'no-speech');
+        resetVoiceButton();
+        _sttTranscript = '';
+    };
+
+    return r;
+}
+
+async function startRecording() {
+    if (isWaitingForResponse) {
+        showTempMessage('⏳ Please wait for the current response…');
+        return;
+    }
+    if (isRecording) return;
+
+    if (!sttSupported) {
+        showTempMessage('❌ Voice input not supported in this browser. Please use Chrome or Edge.', true);
+        return;
+    }
+
+    _stopSynth();
+    _sttTranscript = '';
+
+    recognition = _buildRecognition();
+    if (!recognition) return;
+
+    try {
+        recognition.start();
+    } catch(e) {
+        showTempMessage('❌ Could not start voice input. Please try again.', true);
+        return;
+    }
+
+    isRecording = true;
+    recordingSeconds = 0;
+
+    voiceBtn.classList.add('recording', 'recording-pulse');
+    voiceBtn.querySelector('i').className = 'fas fa-stop';
+    voiceBtn.title = 'Stop recording';
+    voiceBtn.setAttribute('aria-pressed', 'true');
+    voiceBtn.setAttribute('aria-label', 'Stop voice input');
+
+    // Disable input while recording (but DON'T mess with placeholder for results)
+    chatInput.disabled = true;
+    sendBtn.disabled   = true;
+    chatInput.placeholder = PLACEHOLDERS[currentLanguage] || PLACEHOLDERS.en;
+
+    // Show recording status bar
+    if (recordingStatus) recordingStatus.classList.add('visible');
+    if (recordingStatusText) recordingStatusText.textContent = RECORDING_STATUS[currentLanguage] || RECORDING_STATUS.en;
+
+    recordingTimer = setInterval(() => {
+        recordingSeconds++;
+        const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+        const s = String(recordingSeconds % 60).padStart(2, '0');
+        // Update the STATUS BAR timer, NOT the input placeholder
+        if (recordingStatusText && !_sttTranscript) {
+            recordingStatusText.textContent = `🎙️ ${m}:${s} — Click ⏹ to stop`;
+        }
+    }, 1000);
+
+    autoStopTimeout = setTimeout(() => {
+        if (isRecording) {
+            showTempMessage('⚠️ Maximum recording time reached (60 seconds).');
+            stopRecording();
+        }
+    }, 60000);
+}
+
+function stopRecording() {
+    if (autoStopTimeout) { clearTimeout(autoStopTimeout); autoStopTimeout = null; }
+    if (recognition && isRecording) {
+        isRecording = false;
+        try { recognition.stop(); } catch(e) { resetVoiceButton(); }
+        recognition = null;
+    }
+}
+
+function resetVoiceButton() {
+    clearInterval(recordingTimer);
+    recordingTimer   = null;
+    recordingSeconds = 0;
+    isRecording      = false;
+
+    voiceBtn.classList.remove('recording', 'recording-pulse');
+    voiceBtn.querySelector('i').className = 'fas fa-microphone';
+    voiceBtn.title = 'Speak your question';
+    voiceBtn.setAttribute('aria-pressed', 'false');
+    voiceBtn.setAttribute('aria-label', 'Start voice input');
+
+    chatInput.disabled = false;
+    sendBtn.disabled   = false;
+    chatInput.placeholder = PLACEHOLDERS[currentLanguage] || PLACEHOLDERS.en;
+
+    // Hide recording status bar
+    if (recordingStatus) recordingStatus.classList.remove('visible');
+    if (recordingStatusText) recordingStatusText.textContent = RECORDING_STATUS[currentLanguage] || RECORDING_STATUS.en;
+
+    chatInput.focus();
+}
+
+// Legacy stub
+async function sendVoiceMessage(audioBlob) {
+    console.log('sendVoiceMessage: legacy no-op in v2');
+    resetVoiceButton();
+}
+
+async function fetchAudioForConversation(convId) {
+    // TTS handled by 🔊 button on each message bubble
+}
+
+// ═══════════════════════════════════════════════════════
+// SEND TEXT MESSAGE — SSE streaming with typewriter effect
+// ═══════════════════════════════════════════════════════
+let _sseSupported = (typeof EventSource !== 'undefined');
+
+async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    // Check if this message came from voice input
+    if (_voiceInputJustCompleted === true) {
+        lastInputMethod = 'voice';
+        _voiceInputJustCompleted = false;  // Reset flag
+    } else {
+        lastInputMethod = 'text';
+    }
+
+    if (message.length > 500) {
+        showTempMessage('⚠️ Message exceeds 500 character limit.', true);
+        return;
+    }
+    if (isWaitingForResponse) {
+        showTempMessage('⏳ Please wait for the current response…');
+        return;
+    }
+    if (isRecording) {
+        showTempMessage('⚠️ Please stop recording before typing.', true);
+        return;
+    }
+
+    isWaitingForResponse = true;
+    sendBtn.disabled     = true;
+    chatInput.disabled   = true;
+
+    // Auto-detect language
+    (function autoDetectLang(text) {
+        let detected = 'en';
+        if (/[\u0B80-\u0BFF]/.test(text)) detected = 'ta';
+        else if (/[\u0D80-\u0DFF]/.test(text)) detected = 'si';
+        else {
+            const lower = text.toLowerCase();
+            if (['vanakkam','nandri','padippu','kattanam'].some(c => lower.includes(c))) detected = 'ta';
+            else if (['ayubowan','stuthi','kohomada','kawadada'].some(c => lower.includes(c))) detected = 'si';
+        }
+        if (detected !== currentLanguage) {
+            currentLanguage = detected;
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                const active = b.dataset.lang === detected;
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+    })(message);
+
+    addMessage(message, true);
+    chatInput.value = '';
+    showTyping();
+
+    if (_sseSupported) {
+        await _sendMessageSSE(message);
+    } else {
+        await _sendMessageFetch(message);
+    }
+}
+
+// ── SSE path ────────────────────────────────────────────
+async function _sendMessageSSE(message) {
+    const params = new URLSearchParams({ message, lang: currentLanguage });
+    const url    = '/chat/stream?' + params.toString();
+
+    let   botDiv   = null;
+    let   fullText = '';
+    let   es       = null;
+
+    const safetyTimer = setTimeout(() => {
+        if (es) es.close();
+        hideTyping();
+        if (!botDiv) addMessage('❌ Request timed out. Please try again.', false, true);
+        _unlockInput();
+    }, 30000);
+
+    try {
+        es = new EventSource(url);
+
+        es.onmessage = function (evt) {
+            let data;
+            try { data = JSON.parse(evt.data); } catch { return; }
+
+            if (data.type === 'token') {
+                if (!botDiv) {
+                    hideTyping();
+                    botDiv = document.createElement('div');
+                    botDiv.className = 'message bot-msg';
+                    botDiv.innerHTML = '<span class="msg-text streaming-cursor"></span>' +
+                                       '<div class="message-time">' + nowTime() + '</div>';
+                    chatBody.appendChild(botDiv);
+                }
+                fullText += data.text;
+                const textSpan = botDiv.querySelector('.msg-text');
+                if (textSpan) textSpan.innerHTML = escapeHtml(fullText).replace(/\n/g, '<br>');
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                            } else if (data.type === 'done') {
+                    es.close();
+                    clearTimeout(safetyTimer);
+
+                    detectedLanguage = data.language || currentLanguage;
+                    if (data.conversation_id) currentConversationId = data.conversation_id;
+                    
+                    if (botDiv) {
+                        const ts = botDiv.querySelector('.msg-text');
+                        if (ts) {
+                            ts.classList.remove('streaming-cursor');
+                            ts.innerHTML = formatBotText(fullText).replace(/^<span class="msg-text">|<\/span>$/g, '') || escapeHtml(fullText).replace(/\n/g, '<br>');
+                        }
+
+                        // Add language badge
+                        if (detectedLanguage === 'ta') {
+                            const badge = document.createElement('span');
+                            badge.className = 'lang-badge ta';
+                            badge.textContent = 'தமிழ்';
+                            const timeEl = botDiv.querySelector('.message-time');
+                            if (timeEl) botDiv.insertBefore(badge, timeEl);
+                        } else if (detectedLanguage === 'si') {
+                            const badge = document.createElement('span');
+                            badge.className = 'lang-badge si';
+                            badge.textContent = 'සිංහල';
+                            const timeEl = botDiv.querySelector('.message-time');
+                            if (timeEl) botDiv.insertBefore(badge, timeEl);
+                        }
+
+                        // Create SINGLE audio button
+                        const temp2 = document.createElement('div');
+                        temp2.innerHTML = fullText;
+                        const plainText2 = temp2.textContent.replace(/\s+/g, ' ').trim();
+
+                        const audioBtn = document.createElement('button');
+                        audioBtn.className = 'msg-audio-btn';
+                        audioBtn.title = 'Play response';
+                        audioBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                        audioBtn.dataset.speakText = plainText2;
+                        audioBtn.dataset.lang = detectedLanguage || 'en';
+
+                        // UNIFIED audio handler for ALL languages
+                        audioBtn.addEventListener('click', function () {
+                            const lang = this.dataset.lang;
+                            const text = this.dataset.speakText;
+                            
+                            if (synth && synth.speaking && currentSpeakBtn === this) {
+                                _stopSynth();
+                                return;
+                            }
+                            
+                            _stopSynth();
+                            
+                            if (lang === 'si') {
+                                // If already playing this button — stop
+                                if (_activeSiAudio && currentSpeakBtn === this) {
+                                    _stopSynth();
+                                    return;
+                                }
+                                _stopSynth();
+                                const _siBtn = this;
+                                (async () => {
+                                    _siBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                                    try {
+                                        const response = await fetch('/voice/chat', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                                            body: JSON.stringify({ text: text, lang: 'si' })
+                                        });
+                                        const data = await response.json();
+                                        if (data.audio) {
+                                            const audio = new Audio(`data:${data.mime || 'audio/mpeg'};base64,${data.audio}`);
+                                            _activeSiAudio = audio;
+                                            currentSpeakBtn = _siBtn;
+                                            audio.onplay = () => {
+                                                _siBtn.innerHTML = '<i class="fas fa-stop"></i> ⏹ Stop';
+                                                _siBtn.classList.add('playing');
+                                                _showLatestUserPauseControls();
+                                            };
+                                            audio.onpause = () => {
+                                                // only update UI if truly paused (not ended)
+                                                if (!audio.ended) {
+                                                    _siBtn.innerHTML = '<i class="fas fa-play"></i> ▶ Resume';
+                                                }
+                                            };
+                                            audio.onended = () => {
+                                                _activeSiAudio = null;
+                                                currentSpeakBtn = null;
+                                                _synthPaused = false;
+                                                _siBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                                                _siBtn.classList.remove('playing');
+                                                _hideAllUserPauseControls();
+                                            };
+                                            audio.onerror = () => {
+                                                _activeSiAudio = null;
+                                                currentSpeakBtn = null;
+                                                _synthPaused = false;
+                                                _siBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                                                _siBtn.classList.remove('playing');
+                                                _hideAllUserPauseControls();
+                                            };
+                                            await audio.play();
+                                        } else {
+                                            _siBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                                            // Fallback to ResponsiveVoice
+                                            if (_siUsesRV()) {
+                                                _siSpeakRV(text, _siBtn);
+                                                _showLatestUserPauseControls();
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.warn('TTS failed:', err);
+                                        _activeSiAudio = null;
+                                        _siBtn.innerHTML = '<i class="fas fa-volume-up"></i> 🔊 Play Response';
+                                        if (_siUsesRV()) {
+                                            _siSpeakRV(text, _siBtn);
+                                            _showLatestUserPauseControls();
+                                        }
+                                    }
+                                })();
+                            } 
+                            else if (lang === 'ta') {
+                                // Route through central playAudioBase64 which uses
+                                // _selectVoice('ta') — comprehensive Tamil female priority.
+                                playAudioBase64(null, null, this).catch(console.warn);
+                            }
+                            else {
+                                // English — route through central playAudioBase64
+                                // which uses _selectVoice('en') for female voice priority.
+                                playAudioBase64(null, null, this).catch(console.warn);
+                            }
+                        });
+
+                        const timeEl2 = botDiv.querySelector('.message-time');
+                        if (timeEl2) botDiv.insertBefore(audioBtn, timeEl2);
+                        else botDiv.appendChild(audioBtn);
+
+                        addTranslateButton(botDiv, fullText, detectedLanguage);
+
+                        const shouldAutoPlay = (lastInputMethod === 'voice') || handsFreeMode;
+
+                        if (shouldAutoPlay) {
+                            setTimeout(() => {
+                                const playBtn = botDiv.querySelector('.msg-audio-btn');
+                                if (playBtn) playBtn.click();
+                                if (handsFreeMode && !isRecording && !isWaitingForResponse) {
+                                    setTimeout(startRecording, 500);
+                                }
+                            }, 150);
+                        }
+
+                        updateConnectionStatus(true);
+                        _unlockInput();
+                    } else {
+                        // 'done' but botDiv never created (empty stream)
+                        hideTyping();
+                        _unlockInput();
+                    }
+
+                } else if (data.type === 'error') {
+                    es.close();
+                    clearTimeout(safetyTimer);
+                    hideTyping();
+                    addMessage('⚠️ ' + (data.text || 'An error occurred.'), false, true);
+                    updateConnectionStatus(false);
+                    _unlockInput();
+                }
+        };
+
+        es.onerror = function () {
+            es.close();
+            clearTimeout(safetyTimer);
+            hideTyping();
+            if (!botDiv) {
+                _sseSupported = false;
+                _sendMessageFetch(message).finally(_unlockInput);
+            } else {
+                _unlockInput();
+            }
+        };
+
+    } catch (err) {
+        clearTimeout(safetyTimer);
+        hideTyping();
+        addMessage('❌ Network error. Please check your connection and try again.', false, true);
+        updateConnectionStatus(false);
+        _unlockInput();
+    }
+}
+
+// ── Classic fetch/JSON fallback ─────────────────────────
+async function _sendMessageFetch(message) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ message, language: currentLanguage }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+            hideTyping();
+            const errorText = res.status === 429 ? '⚠️ Too many requests. Please wait a moment.' :
+                             res.status === 500 ? '⚠️ Server error. Please try again later.' :
+                             `❌ Server error (${res.status}). Please try again.`;
+            addMessage(errorText, false, true);
+            return;
+        }
+
+        const data = await res.json();
+        hideTyping();
+
+        if (data.response) {
+            detectedLanguage = data.language || currentLanguage;
+            const msgDiv = addMessage(data.response, false, false, detectedLanguage);
+            updateConnectionStatus(true);
+            if (data.conversation_id) currentConversationId = data.conversation_id;
+            if (msgDiv) {
+                const audioBtn = msgDiv.querySelector('.msg-audio-btn');
+                if (audioBtn) {
+                    setTimeout(() => {
+                        playAudioBase64(null, null, audioBtn)
+                            .then(() => {
+                                if (handsFreeMode && !isRecording && !isWaitingForResponse) {
+                                    setTimeout(startRecording, 400);
+                                }
+                            })
+                            .catch(() => {});
+                    }, 200);
+                }
+            }
+        } else if (data.error) {
+            addMessage('⚠️ ' + escapeHtml(data.error), false, true);
+        } else {
+            addMessage('⚠️ I received an empty response. Please try again.', false, true);
+        }
+
+    } catch (err) {
+        hideTyping();
+        if (err.name === 'AbortError') {
+            addMessage('❌ Request timed out. Please try again.', false, true);
+        } else {
+            addMessage('❌ Network error. Please check your connection and try again.', false, true);
+        }
+        updateConnectionStatus(false);
+    } finally {
+        _unlockInput();
+    }
+}
+
+function _unlockInput() {
+    isWaitingForResponse = false;
+    sendBtn.disabled     = false;
+    chatInput.disabled   = false;
+    chatInput.focus();
+}
+
+// ═══════════════════════════════════════════════════════
+// TRANSLATION (Google Translate free endpoint)
+// ═══════════════════════════════════════════════════════
+const TRANSLATE_LANGS = {
+    en: { name: 'English', code: 'en' },
+    ta: { name: 'தமிழ்',   code: 'ta' },
+    si: { name: 'සිංහල',   code: 'si' }
+};
+
+const translateCache = new Map();
+const TRANSLATE_CACHE_MAX = 200;
+
+async function translateText(text, targetLang, sourceLang = 'auto') {
+    if (!text || !text.trim()) return text;
+    if (sourceLang !== 'auto' && sourceLang === targetLang) return text;
+    
+    const cacheKey = `${sourceLang}:${targetLang}:${text.substring(0, 100)}`;
+    if (translateCache.has(cacheKey)) return translateCache.get(cacheKey);
+    
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+        const translateController = new AbortController();
+        const translateTimer = setTimeout(() => translateController.abort(), 5000);
+        const res = await fetch(url, { signal: translateController.signal });
+        clearTimeout(translateTimer);
+        if (!res.ok) throw new Error('Translation API error');
+        const data = await res.json();
+        
+        let translated = '';
+        if (data && data[0]) {
+            data[0].forEach(part => { if (part[0]) translated += part[0]; });
+        }
+        
+        if (translated) {
+            if (translateCache.size >= TRANSLATE_CACHE_MAX) {
+                translateCache.delete(translateCache.keys().next().value);
+            }
+            translateCache.set(cacheKey, translated);
+            return translated;
+        }
+        return text;
+    } catch (err) {
+        console.warn('Translation failed:', err);
+        return text;
+    }
+}
+
+function addTranslateButton(msgDiv, originalText, lang) {
+    const existing = msgDiv.querySelector('.translate-btn-wrap');
+    if (existing) existing.remove();
+    
+    const wrap = document.createElement('div');
+    wrap.className = 'translate-btn-wrap';
+    
+    const targetLangs = Object.entries(TRANSLATE_LANGS).filter(([code]) => code !== (lang || 'en'));
+    
+    targetLangs.forEach(([code, info]) => {
+        const btn = document.createElement('button');
+        btn.className = 'translate-chip';
+        btn.dataset.targetLang = code;
+        btn.dataset.originalText = originalText;
+        btn.dataset.msgLang = lang || 'en';
+        btn.innerHTML = `<i class="fas fa-language"></i> ${info.name}`;
+        btn.title = `Translate to ${info.name}`;
+        
+        btn.addEventListener('click', async function() {
+            const allChips = wrap.querySelectorAll('.translate-chip');
+            allChips.forEach(c => { c.disabled = true; c.style.opacity = '0.5'; });
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Translating…';
+            
+            try {
+                const translated = await translateText(
+                    this.dataset.originalText,
+                    this.dataset.targetLang,
+                    this.dataset.msgLang
+                );
+                
+                const textNode = msgDiv.querySelector('.msg-text');
+                if (textNode) textNode.innerHTML = formatBotText(translated);
+                
+                const badge = msgDiv.querySelector('.lang-badge');
+                if (badge) {
+                    badge.className = `lang-badge ${code}`;
+                    badge.textContent = info.name;
+                    badge.style.display = '';
+                }
+
+                const audioBtn = msgDiv.querySelector('.msg-audio-btn');
+                if (audioBtn) {
+                    audioBtn.dataset.lang      = code;
+                    audioBtn.dataset.speakText = translated;
+                }
+                
+                allChips.forEach(c => c.classList.remove('translate-active'));
+                btn.classList.add('translate-active');
+                btn.innerHTML = `<i class="fas fa-check"></i> ${info.name}`;
+                
+                let origBtn = wrap.querySelector('.show-original-btn');
+                if (!origBtn) {
+                    origBtn = document.createElement('button');
+                    origBtn.className = 'translate-chip show-original-btn';
+                    origBtn.innerHTML = '<i class="fas fa-undo"></i> Original';
+                    origBtn.dataset.originalText = this.dataset.originalText;
+                    origBtn.addEventListener('click', function() {
+                        const textNode2 = msgDiv.querySelector('.msg-text');
+                        if (textNode2) textNode2.innerHTML = formatBotText(origBtn.dataset.originalText || '');
+                        wrap.querySelectorAll('.translate-chip').forEach(c => c.classList.remove('translate-active'));
+                        origBtn.remove();
+                        allChips.forEach(c => {
+                            c.disabled = false;
+                            c.style.opacity = '1';
+                            const tl = TRANSLATE_LANGS[c.dataset.targetLang];
+                            if (tl) c.innerHTML = `<i class="fas fa-language"></i> ${tl.name}`;
+                        });
+                        const audioBtn2 = msgDiv.querySelector('.msg-audio-btn');
+                        if (audioBtn2) {
+                            audioBtn2.dataset.lang      = lang || 'en';
+                            audioBtn2.dataset.speakText = originalText;
+                        }
+                    });
+                    wrap.appendChild(origBtn);
+                }
+                
+                allChips.forEach(c => { c.disabled = false; c.style.opacity = '1'; });
+                btn.innerHTML = `<i class="fas fa-check"></i> ${info.name}`;
+                
+            } catch(e) {
+                btn.innerHTML = `<i class="fas fa-language"></i> ${info.name}`;
+                allChips.forEach(c => { c.disabled = false; c.style.opacity = '1'; });
+                showTempMessage('⚠️ Translation failed. Please try again.', true);
+            }
+        });
+        
+        wrap.appendChild(btn);
+    });
+    
+    msgDiv.appendChild(wrap);
+}
+
+// ═══════════════════════════════════════════════════════
+// FEEDBACK
+// ═══════════════════════════════════════════════════════
+let feedbackLocked = false;
+
+async function sendFeedback(rating) {
+    if (feedbackLocked) return;
+    if (!currentConversationId) {
+        showTempMessage('💬 Please ask a question first before providing feedback!');
+        return;
+    }
+
+    feedbackLocked = true;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const res = await fetch('/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ conversation_id: currentConversationId, rating }),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            const msg = rating === 1
+                ? '🙏 Thank you for your feedback!'
+                : '💪 Thanks for helping us improve!';
+            showTempMessage(msg);
+
+            [feedbackUp, feedbackDown].forEach(el => {
+                el.classList.replace('fas', 'far');
+                el.classList.remove('feedback-up-active', 'feedback-down-active');
+            });
+
+            const el          = rating === 1 ? feedbackUp : feedbackDown;
+            const activeClass = rating === 1 ? 'feedback-up-active' : 'feedback-down-active';
+            el.classList.replace('far', 'fas');
+            el.classList.add(activeClass);
+
+            setTimeout(() => {
+                el.classList.replace('fas', 'far');
+                el.classList.remove(activeClass);
+            }, 2000);
+        } else {
+            showTempMessage('⚠️ Could not save feedback. Please try again.', true);
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            showTempMessage('⚠️ Could not save feedback. Please try again.', true);
+        }
+    } finally {
+        setTimeout(() => { feedbackLocked = false; }, 1000);
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// CONNECTION CHECK
+// ═══════════════════════════════════════════════════════
+async function checkConnection() {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch('/health', { method: 'GET', cache: 'no-store', signal: controller.signal });
+        clearTimeout(timeoutId);
+        updateConnectionStatus(res.ok);
+    } catch (err) {
+        updateConnectionStatus(false);
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// QUICK ASK
+// ═══════════════════════════════════════════════════════
+window.quickAsk = function (question) {
+    if (!question || typeof question !== 'string') return;
+    chatInput.value = String(question).substring(0, 500);
+    sendMessage();
+};
+
+// ═══════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════
+sendBtn.addEventListener('click', sendMessage);
+
+voiceBtn.addEventListener('click', () => {
+    if (isRecording) stopRecording();
+    else             startRecording();
+});
+
+chatInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!isWaitingForResponse && !isRecording) sendMessage();
+    }
+});
+
+feedbackUp.addEventListener('click',   () => sendFeedback(1));
+feedbackDown.addEventListener('click', () => sendFeedback(0));
+
+// Ctrl+Space = toggle recording
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+        e.preventDefault();
+        if (isRecording) stopRecording();
+        else if (!isWaitingForResponse) startRecording();
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkConnection();
+});
+
+window.addEventListener('online',  () => { updateConnectionStatus(true); checkConnection(); });
+window.addEventListener('offline', () => { updateConnectionStatus(false); });
+
+// Prevent double-tap zoom on mobile
+document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        this.click();
+    }, { passive: false });
+});
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+if (!sttSupported && voiceBtn) {
+    voiceBtn.title = 'Voice input requires Chrome or Edge browser';
+}
+
+// Handle ?message= redirect from 404 page
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const q = (params.get('message') || params.get('q') || '').trim();
+    if (q) {
+        const cleanQ = q.substring(0, 500);
+        const waitAndSend = (attempts) => {
+            const ci = document.getElementById('chat-input');
+            if (ci && !ci.disabled && !isWaitingForResponse) {
+                ci.value = cleanQ;
+                sendMessage();
+                const url = new URL(window.location);
+                url.searchParams.delete('q');
+                url.searchParams.delete('message');
+                window.history.replaceState({}, '', url);
+            } else if (attempts > 0) {
+                setTimeout(() => waitAndSend(attempts - 1), 500);
+            }
+        };
+        const stored = sessionStorage.getItem('icst_visitor');
+        const delay = stored ? 700 : 3000;
+        setTimeout(() => waitAndSend(10), delay);
+    }
+})();
+
+setTimeout(() => { if (!chatInput.value) chatInput.focus(); }, 100);
+checkConnection();
+setInterval(checkConnection, 30000);
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     ONBOARDING MODAL
+     ═══════════════════════════════════════════════════════ -->
+<div id="onboardingOverlay" style="
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;animation:obFadeIn 0.35s ease;">
+  <div id="onboardingCard" style="
+      background:#fff;border-radius:20px;width:100%;max-width:420px;
+      box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;
+      animation:obSlideUp 0.35s cubic-bezier(0.22,1,0.36,1);">
+    <div style="background:linear-gradient(135deg,#7E1332,#9a1a3e);padding:28px 28px 22px;text-align:center;">
+      <div style="width:68px;height:68px;border-radius:50%;background:rgba(201,160,61,0.18);
+                  border:2px solid rgba(201,160,61,0.45);margin:0 auto 14px;
+                  display:flex;align-items:center;justify-content:center;">
+        <img src="/static/images/ICST-Logo-Final@4x-1.png" alt="ICST Logo" style="height:55px; width:auto;">
+      </div>
+      <h2 style="color:#fff;font-size:1.2rem;font-weight:700;margin:0 0 6px;">Welcome to ICST University</h2>
+      <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;">
+        Tell us who you are so we can personalise your experience.
+      </p>
+    </div>
+    <div style="padding:24px 28px 28px;">
+      <div id="obError" style="display:none;background:#fef2f2;border:1px solid #fecaca;
+           border-radius:8px;padding:10px 14px;color:#b91c1c;font-size:13px;margin-bottom:16px;"></div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">
+          Full Name <span style="color:#dc2626;">*</span>
+        </label>
+        <div style="position:relative;">
+          <input id="obName" type="text" placeholder="e.g. Ansaf Ahameth" maxlength="80"
+            style="width:100%;padding:11px 40px 11px 14px;border:2px solid #e5e7eb;
+                   border-radius:10px;font-size:14px;outline:none;font-family:inherit;
+                   color:#1f2937;transition:border-color 0.2s,box-shadow 0.2s;"
+            onfocus="this.style.borderColor='#7E1332';this.style.boxShadow='0 0 0 3px rgba(126,19,50,0.1)'"
+            onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+          <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;">👤</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">
+          Phone Number <span style="color:#dc2626;">*</span>
+        </label>
+        <div style="position:relative;">
+          <input id="obPhone" type="tel" placeholder="e.g. +94 77 123 4567" maxlength="20"
+            style="width:100%;padding:11px 40px 11px 14px;border:2px solid #e5e7eb;
+                   border-radius:10px;font-size:14px;outline:none;font-family:inherit;
+                   color:#1f2937;transition:border-color 0.2s,box-shadow 0.2s;"
+            onfocus="this.style.borderColor='#7E1332';this.style.boxShadow='0 0 0 3px rgba(126,19,50,0.1)'"
+            onblur="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'">
+          <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;">📞</span>
+        </div>
+      </div>
+
+      <button id="obStartBtn" onclick="submitOnboarding()"
+        style="width:100%;padding:13px;background:linear-gradient(135deg,#7E1332,#9a1a3e);
+               color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;
+               cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(126,19,50,0.35);
+               transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <span>Start Chatting</span> <span>💬</span>
+      </button>
+
+      <p style="text-align:center;font-size:12px;color:#9ca3af;margin:12px 0 0;">
+        🔒 Your information is kept private and secure.
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes obFadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes obSlideUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// ONBOARDING - FULLY FIXED
+// ═══════════════════════════════════════════════════════
+
+(function initOnboarding() {
+    const stored = sessionStorage.getItem('icst_visitor');
+    if (stored) {
+        try {
+            const v = JSON.parse(stored);
+            if (v && v.name) {
+                applyVisitorName(v.name);
+                const overlay = document.getElementById('onboardingOverlay');
+                if (overlay) overlay.style.display = 'none';
+                enableChatInputs(true);
+                return;
+            }
+        } catch(e) {}
+    }
+    
+    // Disable chat until registered
+    enableChatInputs(false);
+
+    // Focus on name field after a short delay
+    setTimeout(() => {
+        const nameInput = document.getElementById('obName');
+        if (nameInput) nameInput.focus();
+    }, 400);
+
+    // Add Enter key listeners
+    const nameEl = document.getElementById('obName');
+    const phoneEl = document.getElementById('obPhone');
+    
+    if (nameEl) {
+        nameEl.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitOnboarding();
+        });
+    }
+    if (phoneEl) {
+        phoneEl.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitOnboarding();
+        });
+    }
+    
+    // Get the button and attach event listener properly
+    const startBtn = document.getElementById('obStartBtn');
+    if (startBtn) {
+        startBtn.removeAttribute('onclick');
+        startBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitOnboarding();
+        });
+    }
+})();
+
+// Global function for form submission
+window.submitOnboarding = function() {
+    const nameEl = document.getElementById('obName');
+    const phoneEl = document.getElementById('obPhone');
+    const errEl = document.getElementById('obError');
+    const btn = document.getElementById('obStartBtn');
+
+    const name = (nameEl ? nameEl.value : '').trim();
+    const phone = (phoneEl ? phoneEl.value : '').trim();
+
+    if (errEl) {
+        errEl.style.display = 'none';
+        errEl.textContent = '';
+    }
+
+    if (!name) {
+        if (errEl) {
+            errEl.textContent = '⚠️ Please enter your name to continue.';
+            errEl.style.display = 'block';
+        }
+        if (nameEl) {
+            nameEl.focus();
+            nameEl.style.borderColor = '#dc2626';
+        }
+        return;
+    }
+    
+    if (!phone) {
+        if (errEl) {
+            errEl.textContent = '⚠️ Please enter your phone number to continue.';
+            errEl.style.display = 'block';
+        }
+        if (phoneEl) {
+            phoneEl.focus();
+            phoneEl.style.borderColor = '#dc2626';
+        }
+        return;
+    }
+    
+    const phoneRegex = /^[\d\s+\-()\[\]]{7,20}$/;
+    const digitCount = (phone.match(/\d/g) || []).length;
+    if (!phoneRegex.test(phone) || digitCount < 7) {
+        if (errEl) {
+            errEl.textContent = '⚠️ Please enter a valid phone number (7–20 digits).';
+            errEl.style.display = 'block';
+        }
+        if (phoneEl) {
+            phoneEl.focus();
+            phoneEl.style.borderColor = '#dc2626';
+        }
+        return;
+    }
+
+    if (nameEl) nameEl.style.borderColor = '#e5e7eb';
+    if (phoneEl) phoneEl.style.borderColor = '#e5e7eb';
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Loading...';
+    }
+
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+
+    fetch('/register', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ name, phone })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Server error: ' + response.status);
+        return response.json();
+    })
+    .then(data => {
+        sessionStorage.setItem('icst_visitor', JSON.stringify({ name, phone }));
+        applyVisitorName(name);
+        
+        const overlay = document.getElementById('onboardingOverlay');
+        if (overlay) {
+            overlay.style.transition = 'opacity 0.3s';
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 320);
+        }
+        enableChatInputs(true);
+        showTempMessage(`Welcome ${name}! You can now start chatting. 🎉`);
+    })
+    .catch(error => {
+        console.warn('Registration error:', error);
+        sessionStorage.setItem('icst_visitor', JSON.stringify({ name, phone }));
+        applyVisitorName(name);
+        
+        const overlay = document.getElementById('onboardingOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        enableChatInputs(true);
+        showTempMessage(`Welcome ${name}! You can now start chatting. 🎉`);
+    });
+};
+
+function enableChatInputs(enabled) {
+    const chatInputEl = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-btn');
+    const voiceButton = document.getElementById('voiceBtn');
+    
+    if (chatInputEl) chatInputEl.disabled = !enabled;
+    if (sendButton) sendButton.disabled = !enabled;
+    if (voiceButton) voiceButton.disabled = !enabled;
+    
+    if (enabled && chatInputEl) {
+        chatInputEl.focus();
+    }
+}
+
+function applyVisitorName(name) {
+    const wm = document.getElementById('welcomeMsg');
+    if (wm) {
+        const firstName = name.split(' ')[0];
+        wm.innerHTML = `Hi <strong>${escapeHtml(firstName)}</strong>! 👋 Welcome to ICST University. How can I help you today? 😊<br>
+            <small style="color:var(--text-muted);font-size:11px;">
+                You can type in English · தமிழ் · සිංහල
+            </small>
+            <div class="message-time">Just now</div>`;
+    }
+}
+
+// Add spin animation if not already present
+if (!document.querySelector('#spinKeyframes') && !document.querySelector('style[data-spin]')) {
+    const style = document.createElement('style');
+    style.id = 'spinKeyframes';
+    style.setAttribute('data-spin', '1');
+    style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
+}
+</script>
+
+</body>
+</html>

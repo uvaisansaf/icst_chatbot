@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Q&A Intents – ICST Admin">
+    <meta name="theme-color" content="#7E1332">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>Q&amp;A Intents · ICST Admin</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary:      #7E1332;
+            --primary-lt:   #fce7ed;
+            --gold:         #c9a03d;
+            --emerald:      #059669;
+            --red:          #dc2626;
+            --glass-bg:     rgba(255,255,255,0.75);
+            --glass-border: rgba(255,255,255,0.4);
+            --sidebar-w:    17rem;
+            --radius-xl:    1.25rem;
+            --radius-lg:    0.875rem;
+            --shadow:       0 4px 24px rgba(126,19,50,0.08);
+            --shadow-hover: 0 12px 40px rgba(126,19,50,0.14);
+            --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fce7ed 0%, #fff5f7 55%, #fff8f0 100%);
+            min-height: 100vh; overflow-x: hidden; color: #1e0a13;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: #f0a0b5; border-radius: 99px; }
+        .app-shell { display: flex; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+        }
+
+        /* ── Sidebar ─────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w); flex-shrink: 0;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            position: fixed; top: 0; left: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            z-index: 50; transition: transform 0.3s;
+        }
+        .sidebar-brand { padding: 1.75rem 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.35); }
+        .brand-icon { width: 2.75rem; height: 2.75rem; background: linear-gradient(135deg, var(--primary), #9a1a3e); border-radius: 0.875rem; display: flex; align-items: center; justify-content: center; }
+        .brand-icon img { width: 2rem; height: 2rem; object-fit: contain; }
+        .brand-text { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+        .brand-sub { font-size: 0.7rem; color: #9e7080; margin-top: 1px; }
+        .sidebar-nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .nav-section-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #b08090; padding: 0.5rem 0.75rem 0.25rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.875rem; border-radius: var(--radius-lg); text-decoration: none; color: #7a3050; font-size: 0.875rem; font-weight: 500; transition: all var(--transition); margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(126,19,50,0.08); color: var(--primary); }
+        .nav-item.active { background: linear-gradient(135deg, rgba(126,19,50,0.12), rgba(154,26,62,0.08)); color: var(--primary); font-weight: 600; box-shadow: inset 3px 0 0 var(--primary); }
+        .nav-item i { width: 1.1rem; text-align: center; font-size: 0.9rem; }
+        .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.35); }
+        .user-row { display: flex; align-items: center; gap: 0.75rem; }
+        .user-avatar { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #9a1a3e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.8rem; }
+        .user-name { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+        .user-role { font-size: 0.65rem; color: #9e7080; }
+        .logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #b08090; font-size: 0.9rem; transition: color var(--transition); }
+        .logout-btn:hover { color: var(--red); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 60; background: var(--primary); color: white; border: none; border-radius: 0.75rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-toggle { display: flex; align-items: center; }
+            .sidebar-overlay.visible { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+        }
+
+        /* ── Page Header ─────────────────────────────────── */
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 0.85rem; color: #9e7080; margin-top: 2px; }
+        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+
+        /* ── Toolbar ─────────────────────────────────────── */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+        .search-input {
+            flex: 1; min-width: 200px; max-width: 360px;
+            padding: 8px 14px; border: 1.5px solid rgba(126,19,50,0.15);
+            border-radius: var(--radius-lg); font-size: 0.85rem;
+            font-family: inherit; background: rgba(255,255,255,0.85);
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus { border-color: rgba(126,19,50,0.4); box-shadow: 0 0 0 3px rgba(126,19,50,0.07); }
+        .filter-select {
+            padding: 8px 12px; border: 1.5px solid rgba(126,19,50,0.15);
+            border-radius: var(--radius-lg); font-size: 0.85rem;
+            font-family: inherit; background: rgba(255,255,255,0.85);
+            outline: none; cursor: pointer; color: #3d0a1a;
+        }
+
+        /* ── Stats Row ───────────────────────────────────── */
+        .stats-row { display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+        .stat-chip {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 16px; border-radius: var(--radius-lg);
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .stat-chip .val { font-size: 1.2rem; font-weight: 800; }
+        .stat-chip.primary { background: rgba(126,19,50,0.08); color: var(--primary); }
+        .stat-chip.emerald { background: rgba(5,150,105,0.08); color: var(--emerald); }
+        .stat-chip.gold    { background: rgba(201,160,61,0.12); color: #92400e; }
+
+        /* ── Intent Cards ────────────────────────────────── */
+        .intents-grid {
+            display: grid; gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+        .intent-card {
+            padding: 1.125rem; position: relative;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .intent-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+        .intent-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+        .intent-icon {
+            width: 2.25rem; height: 2.25rem; border-radius: 0.75rem;
+            background: rgba(126,19,50,0.1); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .intent-name { font-size: 0.92rem; font-weight: 700; color: #3d0a1a; line-height: 1.2; }
+        .intent-tag { font-size: 0.68rem; color: #9e7080; margin-top: 2px; font-family: 'DM Mono', monospace; }
+        .intent-desc { font-size: 0.78rem; color: #7a3050; line-height: 1.5; margin-bottom: 10px; min-height: 1rem; }
+        .intent-meta {
+            display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .meta-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.68rem; font-weight: 600; padding: 2px 8px;
+            border-radius: 99px;
+        }
+        .meta-pill.patterns  { background: #dbeafe; color: #1d4ed8; }
+        .meta-pill.responses { background: #dcfce7; color: #166534; }
+        .meta-pill.inactive  { background: #f3f4f6; color: #6b7280; }
+        .meta-pill.active    { background: #dcfce7; color: #166534; }
+        .intent-actions { display: flex; gap: 6px; }
+        .action-btn {
+            flex: 1; padding: 6px 10px; border-radius: 8px;
+            font-size: 0.75rem; font-weight: 600; font-family: inherit;
+            cursor: pointer; border: none; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .action-btn.edit  { background: rgba(126,19,50,0.08); color: var(--primary); border: 1px solid rgba(126,19,50,0.15); }
+        .action-btn.edit:hover  { background: rgba(126,19,50,0.14); }
+        .action-btn.del   { background: rgba(220,38,38,0.07); color: var(--red); border: 1px solid rgba(220,38,38,0.15); }
+        .action-btn.del:hover   { background: rgba(220,38,38,0.13); }
+
+        /* ── Empty State ─────────────────────────────────── */
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #9e7080; font-size: 0.88rem; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: 0.3; }
+
+        /* ── Buttons ─────────────────────────────────────── */
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 0.55rem 1.1rem; border-radius: var(--radius-lg); font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all var(--transition); text-decoration: none; white-space: nowrap; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #9a1a3e); color: white; box-shadow: 0 4px 12px rgba(126,19,50,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(126,19,50,0.4); }
+        .btn-ghost { background: rgba(126,19,50,0.07); color: var(--primary); border: 1px solid rgba(126,19,50,0.15); }
+        .btn-ghost:hover { background: rgba(126,19,50,0.12); }
+        .btn-gold { background: rgba(201,160,61,0.12); color: #92400e; border: 1px solid rgba(201,160,61,0.25); }
+        .btn-gold:hover { background: rgba(201,160,61,0.2); }
+        .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
+
+        /* ── Toast ───────────────────────────────────────── */
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background: #1e0a13; color: white; padding: 12px 18px; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: toastIn 0.3s ease; max-width: 320px; }
+        .toast.success { border-left: 3px solid #4ade80; }
+        .toast.error   { border-left: 3px solid #f87171; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+        /* ── Confirm Modal ───────────────────────────────── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.visible { display: flex; }
+        .modal { background: white; border-radius: 20px; padding: 24px; max-width: 360px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: modalIn 0.3s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:none} }
+        .modal h4 { font-size: 1.05rem; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+        .modal p  { font-size: 0.85rem; color: #7a3050; margin-bottom: 18px; line-height: 1.5; }
+        .modal-btns { display: flex; gap: 8px; }
+        .modal-btn { flex: 1; padding: 9px; border-radius: 10px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        .modal-btn.cancel  { background: #f3f4f6; color: #6b7280; }
+        .modal-btn.cancel:hover  { background: #e5e7eb; }
+        .modal-btn.confirm { background: var(--red); color: white; }
+        .modal-btn.confirm:hover { background: #b91c1c; }
+
+        @media (max-width: 640px) {
+            .intents-grid { grid-template-columns: 1fr; }
+            .stats-row { gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal">
+        <h4><i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>Delete Intent</h4>
+        <p id="confirmMsg">Are you sure you want to delete this intent? All associated patterns and responses will also be deleted.</p>
+        <div class="modal-btns">
+            <button class="modal-btn cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="modal-btn confirm" onclick="doDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div class="brand-icon">
+                    <img src="/static/images/ICST-Logo-Final@4x-1.png"
+                         onerror="this.parentElement.innerHTML='🎓'" alt="ICST">
+                </div>
+                <div>
+                    <div class="brand-text">ICST Admin</div>
+                    <div class="brand-sub">Chatbot Control Panel</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">Content</div>
+            <a href="{{ url_for('admin_intents') }}" class="nav-item active">
+                <i class="fas fa-brain"></i> Q&amp;A Intents
+            </a>
+            <a href="{{ url_for('admin_user_conversations') }}" class="nav-item">
+                <i class="fas fa-comments"></i> Conversations
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">System</div>
+            <a href="{{ url_for('admin_settings') }}" class="nav-item">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-item" target="_blank">
+                <i class="fas fa-external-link-alt"></i> View Chatbot
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-row">
+                <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+                <div>
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="toast {{ 'success' if category in ('success','info') else 'error' }}"
+             style="position:relative;bottom:auto;right:auto;margin-bottom:1rem;max-width:100%">
+            <i class="fas {{ 'fa-check-circle' if category in ('success','info') else 'fa-exclamation-circle' }}"
+               style="margin-right:6px"></i>{{ message }}
+        </div>
+        {% endfor %}{% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Q&amp;A Intents</h1>
+                <p class="page-subtitle">Manage chatbot question patterns and responses</p>
+            </div>
+            <div class="header-actions">
+                <form method="POST" action="{{ url_for('admin_import_faq') }}" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-gold btn-sm">
+                        <i class="fas fa-file-import"></i> Import Built-in FAQ
+                    </button>
+                </form>
+                <a href="{{ url_for('admin_intent_add') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add Intent
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="glass stat-chip primary">
+                <span class="val">{{ intents|length }}</span> Total Intents
+            </div>
+            <div class="glass stat-chip emerald">
+                <span class="val">{{ intents|selectattr('is_active')|list|length }}</span> Active
+            </div>
+            <div class="glass stat-chip gold">
+                <span class="val">{{ intents|rejectattr('is_active')|list|length }}</span> Inactive
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <input class="search-input" type="text" id="intentSearch"
+                   placeholder="🔍 Search intents by name or tag…"
+                   oninput="filterIntents(this.value)" autocomplete="off">
+            <select class="filter-select" id="statusFilter" onchange="filterIntents(document.getElementById('intentSearch').value)">
+                <option value="all">All Status</option>
+                <option value="active">Active only</option>
+                <option value="inactive">Inactive only</option>
+            </select>
+        </div>
+
+        <!-- Intents Grid -->
+        {% if intents %}
+        <div class="intents-grid" id="intentsGrid">
+            {% for intent in intents %}
+            <div class="glass intent-card"
+                 data-name="{{ intent.name|lower }}"
+                 data-tag="{{ intent.tag|lower }}"
+                 data-status="{{ 'active' if intent.is_active else 'inactive' }}">
+                <div class="intent-card-header">
+                    <div class="intent-icon">
+                        <i class="fas fa-comment-dots"></i>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                        <div class="intent-name">{{ intent.name or intent.tag }}</div>
+                        <div class="intent-tag">{{ intent.tag }}</div>
+                    </div>
+                </div>
+                {% if intent.description %}
+                <div class="intent-desc">{{ intent.description[:100] }}{{ '…' if intent.description|length > 100 }}</div>
+                {% else %}
+                <div class="intent-desc" style="color:#c0a0ae;font-style:italic">No description</div>
+                {% endif %}
+                <div class="intent-meta">
+                    <span class="meta-pill patterns">
+                        <i class="fas fa-list-ul"></i> {{ intent.patterns|length }} patterns
+                    </span>
+                    <span class="meta-pill responses">
+                        <i class="fas fa-reply"></i> {{ intent.responses|length }} responses
+                    </span>
+                    <span class="meta-pill {{ 'active' if intent.is_active else 'inactive' }}">
+                        {{ '● Active' if intent.is_active else '○ Inactive' }}
+                    </span>
+                </div>
+                <div class="intent-actions">
+                    <a href="{{ url_for('admin_intent_edit', intent_id=intent.id) }}"
+                       class="action-btn edit">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <button class="action-btn del"
+                            onclick="confirmDelete({{ intent.id }}, '{{ intent.name|replace("'","\\'")|e }}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="glass">
+            <div class="empty-state">
+                <i class="fas fa-brain"></i>
+                No intents yet. Add your first intent or import the built-in FAQ.
+                <br><br>
+                <a href="{{ url_for('admin_intent_add') }}" class="btn btn-primary" style="display:inline-flex">
+                    <i class="fas fa-plus"></i> Add First Intent
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+
+<script>
+'use strict';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+let _deleteId = null;
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('visible');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}" style="margin-right:6px"></i>${msg}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+function filterIntents(query) {
+    const q      = query.toLowerCase().trim();
+    const status = document.getElementById('statusFilter').value;
+    document.querySelectorAll('.intent-card').forEach(card => {
+        const nameMatch   = card.dataset.name.includes(q);
+        const tagMatch    = card.dataset.tag.includes(q);
+        const statusMatch = status === 'all' || card.dataset.status === status;
+        card.style.display = (nameMatch || tagMatch) && statusMatch ? '' : 'none';
+    });
+}
+
+function confirmDelete(id, name) {
+    _deleteId = id;
+    const msg = document.getElementById('confirmMsg');
+    const safeName = name.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    msg.innerHTML = `Delete <strong>"${safeName}"</strong>? All associated patterns and responses will be permanently removed.`;
+    document.getElementById('confirmModal').classList.add('visible');
+}
+
+function closeConfirm() {
+    _deleteId = null;
+    document.getElementById('confirmModal').classList.remove('visible');
+}
+
+function doDelete() {
+    if (!_deleteId) return;
+    const id = _deleteId;
+    closeConfirm();
+
+    fetch(`/admin/intent/${id}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const card = document.querySelector(`.intent-card[data-tag]`);
+            // Find and remove the card that was deleted by reloading
+            showToast('Intent deleted successfully.', 'success');
+            setTimeout(() => window.location.reload(), 900);
+        } else {
+            showToast(data.message || 'Delete failed.', 'error');
+        }
+    })
+    .catch(() => showToast('Network error. Please try again.', 'error'));
+}
+
+// Auto-dismiss flash
+document.querySelectorAll('.toast[style*="position:relative"]').forEach(el => {
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000);
+    el.style.transition = 'opacity 0.3s';
+});
+</script>
+</body>
+</html>

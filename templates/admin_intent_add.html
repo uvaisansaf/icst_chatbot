@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#002b5c">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>Add New Intent - ICST Chatbot</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+        }
+        
+        /* Glassmorphism Effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+        
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        /* Input Focus Effects */
+        .input-focus-effect {
+            transition: all 0.3s ease;
+        }
+        
+        .input-focus-effect:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        /* Tag Preview */
+        .tag-preview {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        /* Error State */
+        .input-error {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        
+        /* Success State */
+        .input-success {
+            border-color: #10b981 !important;
+            background-color: #f0fdf4 !important;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .glass-card {
+                padding: 1.25rem !important;
+            }
+        }
+        
+        /* Tip Card */
+        .tip-card {
+            transition: all 0.3s ease;
+        }
+        
+        .tip-card:hover {
+            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Toast Notification */
+        .toast-notify {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1f2937;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 48px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 999;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Loading State */
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+            cursor: wait;
+        }
+        
+        /* Character Counter */
+        .char-counter {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 5px;
+            text-align: right;
+            transition: all 0.3s;
+        }
+        
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+        
+        .char-counter.danger {
+            color: #ef4444;
+        }
+        
+        /* Floating Label Effect */
+        .floating-label {
+            position: relative;
+        }
+        
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label {
+            transform: translateY(-25px);
+            font-size: 11px;
+            color: #667eea;
+        }
+
+        /* ── Dark Mode (shared, localStorage-driven) ──────────────────── */
+        body.dark {
+            background: linear-gradient(140deg, #0f172a 0%, #111827 100%) !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark .glass {
+            background: rgba(15,23,42,0.92) !important;
+            border-color: rgba(255,255,255,0.08) !important;
+        }
+        body.dark .sidebar {
+            background: rgba(10,15,30,0.96) !important;
+            border-color: rgba(255,255,255,0.07) !important;
+        }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background: rgba(255,255,255,0.08) !important; color: white !important; }
+        body.dark .nav-item.active { background: linear-gradient(135deg,rgba(79,70,229,0.35),rgba(124,58,237,0.35)) !important; color: white !important; }
+        body.dark .stat-card { background: rgba(30,41,59,0.9) !important; }
+        body.dark h1,body.dark h2,body.dark h3,body.dark h4,body.dark p,body.dark span,body.dark label,body.dark td,body.dark th { color: #e2e8f0 !important; }
+        body.dark .text-gray-500, body.dark .text-gray-600, body.dark .muted { color: #94a3b8 !important; }
+        body.dark table { background: rgba(15,23,42,0.9) !important; }
+        body.dark thead { background: rgba(30,41,59,0.8) !important; }
+        body.dark tr:hover { background: rgba(255,255,255,0.04) !important; }
+        body.dark td, body.dark th { border-color: rgba(255,255,255,0.07) !important; }
+        body.dark input, body.dark textarea, body.dark select {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        body.dark input::placeholder, body.dark textarea::placeholder { color: #64748b !important; }
+        body.dark .btn-gray { background: #1e293b !important; color: #cbd5e1 !important; border-color: #334155 !important; }
+        body.dark .sidebar-brand { border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .brand-title { color: #f1f5f9 !important; }
+    </style>
+</head>
+<body>
+<script>// ── Dark Mode (localStorage sync across all admin pages) ────────────────
+(function applyDark() {
+    if (localStorage.getItem('icst_dark_mode') === 'true') {
+        document.body.classList.add('dark');
+    }
+})();</script>
+
+    <!-- Navigation -->
+    <div class="glass-card mx-4 md:mx-8 mt-4 md:mt-6 px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-plus-circle text-white text-lg md:text-xl"></i>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Add New Intent</h1>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+            <a href="{{ url_for('admin_settings') }}" class="flex items-center gap-2 bg-gray-100 text-gray-700 px-3 md:px-4 py-2 rounded-xl hover:bg-gray-200 transition text-sm border border-gray-200">
+                <i class="fas fa-cog"></i>
+                <span class="hidden sm:inline">Settings</span>
+            </a>
+            <a href="{{ url_for('admin_intents') }}" class="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 md:px-6 py-2 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm md:text-base shadow-md">
+                <i class="fas fa-list"></i>
+                <span>View All Intents</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 md:px-8 py-6 md:py-8 max-w-2xl">
+        
+        <!-- Back Link -->
+        <div class="mb-4 md:mb-6">
+            <a href="{{ url_for('admin_intents') }}" class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 transition text-sm md:text-base group">
+                <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+                <span>Back to Intents</span>
+            </a>
+        </div>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4 md:mb-6 space-y-2">
+                    {% for category, message in messages %}
+                        <div class="glass-card px-4 py-3 text-sm border-l-4 
+                            {% if category == 'success' %}border-green-500 bg-green-50 text-green-700
+                            {% elif category == 'danger' or category == 'error' %}border-red-500 bg-red-50 text-red-700
+                            {% else %}border-blue-500 bg-blue-50 text-blue-700{% endif %} animate-slide-in flash-message">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}exclamation-circle{% else %}info-circle{% endif %} mr-2"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Main Form Card -->
+        <div class="glass-card p-5 md:p-8 animate-slide-in">
+            <div class="mb-6 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full mb-3">
+                    <i class="fas fa-layer-group text-2xl text-indigo-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Create a New Intent</h2>
+                <p class="text-sm text-gray-500 mt-1">Define a new category of questions and answers</p>
+            </div>
+            
+            <form method="POST" action="{{ url_for('admin_intent_add') }}" id="intentForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Intent Tag Field -->
+                <div class="form-group mb-5 md:mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-tag text-indigo-500 mr-2"></i>
+                        Intent Tag <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" 
+                               name="tag" 
+                               id="tagInput"
+                               required 
+                               placeholder="e.g., admission_fees"
+                               pattern="[a-z0-9_]+"
+                               title="Use lowercase letters, numbers, and underscores only"
+                               class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 input-focus-effect"
+                               oninput="validateTag(this.value); updateTagPreview(this.value)"
+                               autocomplete="off">
+                        <i class="fas fa-tag absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div class="info-text flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Use lowercase letters, numbers, and underscores only (no spaces)</span>
+                    </div>
+                    <div id="tagError" class="error-message hidden"></div>
+                </div>
+                
+                <!-- Tag Preview -->
+                <div class="tag-preview p-3 md:p-4 mb-5 md:mb-6 hidden" id="tagPreview">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-eye text-indigo-500"></i>
+                            <span class="text-gray-600">Preview:</span>
+                            <code class="bg-white px-2 py-1 rounded text-indigo-600 font-mono text-xs" id="tagPreviewText"></code>
+                        </div>
+                        <button type="button" onclick="copyToClipboard(document.getElementById('tagPreviewText').innerText)" class="text-gray-400 hover:text-indigo-600 transition text-xs">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Display Name Field -->
+                <div class="form-group mb-5 md:mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-font text-indigo-500 mr-2"></i>
+                        Display Name <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" 
+                               name="name" 
+                               id="nameInput"
+                               required 
+                               placeholder="e.g., Admission Fees"
+                               maxlength="100"
+                               class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 input-focus-effect"
+                               autocomplete="off">
+                        <i class="fas fa-heading absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="info-text flex items-center gap-2 text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i>
+                            <span>A human-readable name for this intent category</span>
+                        </div>
+                        <span class="text-xs text-gray-400" id="nameCounter">0/100</span>
+                    </div>
+                </div>
+                
+                <!-- Description Field -->
+                <div class="form-group mb-5 md:mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-align-left text-indigo-500 mr-2"></i>
+                        Description <span class="text-gray-400 text-xs font-normal">(optional)</span>
+                    </label>
+                    <textarea name="description" 
+                              id="descriptionInput"
+                              placeholder="What is this intent about? (e.g., 'Questions about tuition fees, payment methods, and scholarships')" 
+                              rows="4"
+                              maxlength="500"
+                              class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 resize-none input-focus-effect"></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="info-text flex items-center gap-2 text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Helps you understand what this intent covers</span>
+                        </div>
+                        <span class="text-xs text-gray-400" id="descCounter">0/500</span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 mt-6 md:mt-8">
+                    <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-[1.02]">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Create Intent</span>
+                    </button>
+                    <a href="{{ url_for('admin_intents') }}" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Quick Tips Card -->
+        <div class="glass-card p-5 md:p-8 mt-4 md:mt-6 animate-slide-in" style="animation-delay: 0.1s">
+            <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-amber-500"></i>
+                Quick Tips
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="tip-card flex items-start gap-3 p-3 rounded-xl hover:bg-white/30 transition cursor-pointer" onclick="showTip('after')">
+                    <i class="fas fa-plus-circle text-emerald-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-sm">After creating</p>
+                        <p class="text-xs text-gray-500">You'll be able to add questions and answers to this intent</p>
+                    </div>
+                </div>
+                <div class="tip-card flex items-start gap-3 p-3 rounded-xl hover:bg-white/30 transition cursor-pointer" onclick="showTip('variations')">
+                    <i class="fas fa-random text-purple-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-sm">Add variations</p>
+                        <p class="text-xs text-gray-500">Include multiple ways users might ask the same question</p>
+                    </div>
+                </div>
+                <div class="tip-card flex items-start gap-3 p-3 rounded-xl hover:bg-white/30 transition cursor-pointer" onclick="showTip('answers')">
+                    <i class="fas fa-list text-indigo-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-sm">Multiple answers</p>
+                        <p class="text-xs text-gray-500">Add different phrasings of the same answer for variety</p>
+                    </div>
+                </div>
+                <div class="tip-card flex items-start gap-3 p-3 rounded-xl hover:bg-white/30 transition cursor-pointer" onclick="showTip('natural')">
+                    <i class="fas fa-comment text-cyan-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-sm">Keep it natural</p>
+                        <p class="text-xs text-gray-500">Use simple, conversational language that users would actually use</p>
+                    </div>
+                </div>
+                <div class="tip-card flex items-start gap-3 p-3 rounded-xl hover:bg-white/30 transition md:col-span-2 cursor-pointer" onclick="showTip('specific')">
+                    <i class="fas fa-bullseye text-red-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800 text-sm">Be specific</p>
+                        <p class="text-xs text-gray-500">Each intent should cover ONE topic area</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example Intents Card -->
+        <div class="glass-card p-5 md:p-8 mt-4 md:mt-6 animate-slide-in" style="animation-delay: 0.2s">
+            <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-file-alt text-indigo-500"></i>
+                Example Intents
+                <span class="text-xs text-gray-400 font-normal ml-2">Click to use</span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition cursor-pointer group" onclick="fillExample('admission_requirements', 'Admission Requirements', 'Questions about entry requirements, qualifications needed, and eligibility criteria')">
+                    <code class="text-indigo-600 font-mono text-sm group-hover:text-indigo-700">admission_requirements</code>
+                    <p class="text-xs text-gray-600 mt-1">"What are the entry requirements?"</p>
+                </div>
+                <div class="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition cursor-pointer group" onclick="fillExample('tuition_fees', 'Tuition Fees', 'Questions about course costs, payment methods, and fee structure')">
+                    <code class="text-indigo-600 font-mono text-sm group-hover:text-indigo-700">tuition_fees</code>
+                    <p class="text-xs text-gray-600 mt-1">"How much does the course cost?"</p>
+                </div>
+                <div class="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition cursor-pointer group" onclick="fillExample('application_deadline', 'Application Deadline', 'Questions about application closing dates and late submissions')">
+                    <code class="text-indigo-600 font-mono text-sm group-hover:text-indigo-700">application_deadline</code>
+                    <p class="text-xs text-gray-600 mt-1">"When is the last date to apply?"</p>
+                </div>
+                <div class="bg-white/40 rounded-xl p-3 hover:bg-white/60 transition cursor-pointer group" onclick="fillExample('scholarship_info', 'Scholarship Information', 'Questions about available scholarships and how to apply')">
+                    <code class="text-indigo-600 font-mono text-sm group-hover:text-indigo-700">scholarship_info</code>
+                    <p class="text-xs text-gray-600 mt-1">"What scholarships are available?"</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="glass-card p-5 md:p-8 mt-4 md:mt-6 animate-slide-in" style="animation-delay: 0.3s">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center animate-pulse">
+                        <i class="fas fa-headset text-indigo-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Need Help?</p>
+                        <p class="text-xs text-gray-500">Contact support for assistance</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('support_page') }}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1 transition-all hover:gap-2">
+                    <i class="fas fa-question-circle"></i>
+                    <span>View Documentation</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-6 md:mt-8 pt-4 md:pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-400 border-t border-gray-200">
+            <p>© 2026 ICST University Chatbot | Powered by fuzzy-difflib engine</p>
+            <div class="flex gap-4">
+                <a href="{{ url_for('support_page') }}" class="hover:text-indigo-600 transition">Documentation</a>
+                <a href="{{ url_for('support_page') }}" class="hover:text-indigo-600 transition">Support</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Toast notification
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notify';
+            const icon = isError ? '❌' : '✅';
+            toast.innerHTML = `${icon} ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Copied to clipboard! 📋');
+                }).catch(() => {
+                    showToast('Failed to copy', true);
+                });
+            }
+        }
+        
+        // Show tip message
+        function showTip(tipType) {
+            const tips = {
+                after: "💡 After creating the intent, you'll be redirected to the edit page where you can add questions and answers.",
+                variations: "📝 Pro Tip: Add at least 5-10 different ways users might ask the same question for better matching accuracy.",
+                answers: "🎯 Having multiple response variations makes the chatbot feel more natural and less repetitive.",
+                natural: "🗣️ Use conversational language. For example, instead of 'Inquire about admission', use 'How do I apply?'",
+                specific: "🎯 Keep intents focused. 'Admission Fees' is better than 'Admission' which could cover many topics."
+            };
+            showToast(tips[tipType] || "Check the documentation for more tips!");
+        }
+        
+        // Validate tag format
+        function validateTag(value) {
+            const tagInput = document.getElementById('tagInput');
+            const tagError = document.getElementById('tagError');
+            const pattern = /^[a-z0-9_]*$/;
+            
+            if (value && !pattern.test(value)) {
+                tagError.textContent = 'Only lowercase letters, numbers, and underscores allowed';
+                tagError.classList.remove('hidden');
+                tagInput.classList.add('input-error');
+                tagInput.classList.remove('input-success');
+                return false;
+            } else if (value && value.length > 0) {
+                tagError.classList.add('hidden');
+                tagInput.classList.remove('input-error');
+                tagInput.classList.add('input-success');
+                return true;
+            } else {
+                tagError.classList.add('hidden');
+                tagInput.classList.remove('input-error', 'input-success');
+                return true;
+            }
+        }
+        
+        // Live tag preview
+        function updateTagPreview(value) {
+            const preview = document.getElementById('tagPreview');
+            const previewText = document.getElementById('tagPreviewText');
+            
+            if (value && value.trim() !== '') {
+                let formatted = value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                previewText.textContent = formatted;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+        
+        // Fill example intent
+        function fillExample(tag, name, description) {
+            document.getElementById('tagInput').value = tag;
+            document.getElementById('nameInput').value = name;
+            document.getElementById('descriptionInput').value = description;
+            updateTagPreview(tag);
+            validateTag(tag);
+            updateCounters();
+            showToast(`Example filled: ${name}`, false);
+        }
+        
+        // Update character counters
+        function updateCounters() {
+            const nameInput = document.getElementById('nameInput');
+            const nameCounter = document.getElementById('nameCounter');
+            const descInput = document.getElementById('descriptionInput');
+            const descCounter = document.getElementById('descCounter');
+            
+            if (nameInput && nameCounter) {
+                const nameLen = nameInput.value.length;
+                nameCounter.textContent = `${nameLen}/100`;
+                if (nameLen > 90) {
+                    nameCounter.classList.add('danger');
+                } else if (nameLen > 80) {
+                    nameCounter.classList.add('warning');
+                } else {
+                    nameCounter.classList.remove('warning', 'danger');
+                }
+            }
+            
+            if (descInput && descCounter) {
+                const descLen = descInput.value.length;
+                descCounter.textContent = `${descLen}/500`;
+                if (descLen > 450) {
+                    descCounter.classList.add('danger');
+                } else if (descLen > 400) {
+                    descCounter.classList.add('warning');
+                } else {
+                    descCounter.classList.remove('warning', 'danger');
+                }
+            }
+        }
+        
+        // Auto-resize textarea
+        const textarea = document.querySelector('textarea');
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                updateCounters();
+            });
+        }
+        
+        // Name input counter
+        const nameInput = document.getElementById('nameInput');
+        if (nameInput) {
+            nameInput.addEventListener('input', updateCounters);
+        }
+        
+        // Form validation before submit
+        document.getElementById('intentForm').addEventListener('submit', function(e) {
+            const tagInput = document.getElementById('tagInput');
+            const nameInput = document.getElementById('nameInput');
+            
+            if (!validateTag(tagInput.value)) {
+                e.preventDefault();
+                showToast('Please enter a valid tag (lowercase, numbers, underscores only)', true);
+                tagInput.focus();
+                return;
+            }
+            
+            if (!nameInput.value.trim()) {
+                e.preventDefault();
+                showToast('Please enter a display name', true);
+                nameInput.focus();
+                return;
+            }
+            
+            if (tagInput.value.trim().length < 3) {
+                e.preventDefault();
+                showToast('Tag should be at least 3 characters long', true);
+                tagInput.focus();
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.classList.add('btn-loading');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Creating...</span>';
+        });
+        
+        // Add keyboard shortcut (Ctrl+S to submit)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                const form = document.getElementById('intentForm');
+                const tagVal = document.getElementById('tagInput')?.value || '';
+                if (form && validateTag(tagVal)) {
+                    form.requestSubmit ? form.requestSubmit() : form.submit();
+                } else {
+                    showToast('Please fix validation errors first', true);
+                }
+            }
+        });
+        
+        // Animate elements on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(card);
+        });
+        
+        // Trigger initial animations
+        setTimeout(() => {
+            document.querySelectorAll('.glass-card').forEach(card => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            });
+        }, 100);
+        
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    msg.style.transform = 'translateY(-10px)';
+                    setTimeout(() => msg.remove(), 300);
+                }, 4000);
+            });
+        }, 100);
+        
+        // Initialize counters
+        updateCounters();
+    </script>
+</body>
+</html>

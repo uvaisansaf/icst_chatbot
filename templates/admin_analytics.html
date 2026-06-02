@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Analytics – ICST Admin">
+    <meta name="theme-color" content="#7E1332">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>Analytics · ICST Admin</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary:      #7E1332;
+            --primary-lt:   #fce7ed;
+            --gold:         #c9a03d;
+            --emerald:      #059669;
+            --cyan:         #0891b2;
+            --red:          #dc2626;
+            --glass-bg:     rgba(255,255,255,0.75);
+            --glass-border: rgba(255,255,255,0.4);
+            --sidebar-w:    17rem;
+            --radius-xl:    1.25rem;
+            --radius-lg:    0.875rem;
+            --shadow:       0 4px 24px rgba(126,19,50,0.08);
+            --shadow-hover: 0 12px 40px rgba(126,19,50,0.14);
+            --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fce7ed 0%, #fff5f7 55%, #fff8f0 100%);
+            min-height: 100vh; overflow-x: hidden; color: #1e0a13;
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #f0a0b5; border-radius: 99px; }
+        .app-shell { display: flex; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+        }
+        .glass-hover { transition: transform var(--transition), box-shadow var(--transition); }
+        .glass-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+
+        /* ── Sidebar ─────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w); flex-shrink: 0;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            position: fixed; top: 0; left: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            z-index: 50; transition: transform 0.3s;
+        }
+        .sidebar-brand { padding: 1.75rem 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.35); }
+        .brand-icon {
+            width: 2.75rem; height: 2.75rem;
+            background: linear-gradient(135deg, var(--primary), #9a1a3e);
+            border-radius: 0.875rem; display: flex; align-items: center; justify-content: center;
+        }
+        .brand-icon img { width: 2rem; height: 2rem; object-fit: contain; }
+        .brand-text { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+        .brand-sub { font-size: 0.7rem; color: #9e7080; margin-top: 1px; }
+        .sidebar-nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .nav-section-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #b08090; padding: 0.5rem 0.75rem 0.25rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.875rem; border-radius: var(--radius-lg); text-decoration: none; color: #7a3050; font-size: 0.875rem; font-weight: 500; transition: all var(--transition); margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(126,19,50,0.08); color: var(--primary); }
+        .nav-item.active { background: linear-gradient(135deg, rgba(126,19,50,0.12), rgba(154,26,62,0.08)); color: var(--primary); font-weight: 600; box-shadow: inset 3px 0 0 var(--primary); }
+        .nav-item i { width: 1.1rem; text-align: center; font-size: 0.9rem; }
+        .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.35); }
+        .user-row { display: flex; align-items: center; gap: 0.75rem; }
+        .user-avatar { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #9a1a3e); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.8rem; }
+        .user-name { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+        .user-role { font-size: 0.65rem; color: #9e7080; }
+        .logout-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #b08090; font-size: 0.9rem; transition: color var(--transition); }
+        .logout-btn:hover { color: var(--red); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 60; background: var(--primary); color: white; border: none; border-radius: 0.75rem; padding: 0.6rem 0.75rem; cursor: pointer; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 45; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-toggle { display: flex; align-items: center; }
+            .sidebar-overlay.visible { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+        }
+
+        /* ── Page Header ─────────────────────────────────── */
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 0.85rem; color: #9e7080; margin-top: 2px; }
+        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+
+        /* ── Stat Cards ──────────────────────────────────── */
+        .stats-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); margin-bottom: 1.5rem; }
+        .stat-card { padding: 1.25rem; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; width: 80px; height: 80px; border-radius: 50%; top: -20px; right: -20px; opacity: 0.12; }
+        .stat-card.primary::before { background: var(--primary); }
+        .stat-card.emerald::before { background: var(--emerald); }
+        .stat-card.cyan::before    { background: var(--cyan); }
+        .stat-card.gold::before    { background: var(--gold); }
+        .stat-card.red::before     { background: var(--red); }
+        .stat-icon { width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 10px; }
+        .stat-card.primary .stat-icon { background: rgba(126,19,50,0.1); color: var(--primary); }
+        .stat-card.emerald .stat-icon { background: rgba(5,150,105,0.1); color: var(--emerald); }
+        .stat-card.cyan .stat-icon    { background: rgba(8,145,178,0.1); color: var(--cyan); }
+        .stat-card.gold .stat-icon    { background: rgba(201,160,61,0.15); color: #92400e; }
+        .stat-card.red .stat-icon     { background: rgba(220,38,38,0.1); color: var(--red); }
+        .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9e7080; margin-bottom: 6px; }
+        .stat-value { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+        .stat-card.primary .stat-value { color: var(--primary); }
+        .stat-card.emerald .stat-value { color: var(--emerald); }
+        .stat-card.cyan .stat-value    { color: var(--cyan); }
+        .stat-card.gold .stat-value    { color: #92400e; }
+        .stat-card.red .stat-value     { color: var(--red); }
+
+        /* ── Section Grid ────────────────────────────────── */
+        .section-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 1.25rem; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.375rem 0; }
+        .card-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+        .card-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: var(--primary-lt); color: var(--primary); }
+        .card-body { padding: 1rem 1.375rem 1.375rem; }
+
+        /* ── Daily Chart ─────────────────────────────────── */
+        .chart-wrap { overflow-x: auto; }
+        .chart-bars { display: flex; align-items: flex-end; gap: 3px; height: 160px; min-width: 300px; padding: 0 2px; }
+        .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 12px; }
+        .chart-bar { width: 100%; background: linear-gradient(180deg, var(--primary), #9a1a3e); border-radius: 3px 3px 0 0; min-height: 3px; cursor: pointer; position: relative; transition: opacity 0.2s; }
+        .chart-bar:hover { opacity: 0.75; }
+        .chart-bar-tip { display: none; position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); background: #1e0a13; color: white; font-size: 11px; padding: 3px 7px; border-radius: 6px; white-space: nowrap; z-index: 10; pointer-events: none; }
+        .chart-bar:hover .chart-bar-tip { display: block; }
+        .chart-bar-label { font-size: 7px; color: #9e7080; white-space: nowrap; overflow: hidden; width: 100%; text-align: center; }
+
+        /* ── Horizontal Bar (intents / lang) ─────────────── */
+        .hbar-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(126,19,50,0.06); }
+        .hbar-row:last-child { border-bottom: none; }
+        .hbar-label { font-size: 0.8rem; color: #3d0a1a; flex: 1.2; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hbar-track { flex: 2; height: 7px; background: rgba(126,19,50,0.08); border-radius: 99px; overflow: hidden; }
+        .hbar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+        .hbar-count { font-size: 0.75rem; font-weight: 700; color: var(--primary); width: 32px; text-align: right; flex-shrink: 0; }
+
+        /* ── Filter bar ──────────────────────────────────── */
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(126,19,50,0.2); font-size: 0.8rem; font-weight: 600; cursor: pointer; background: white; color: #7a3050; font-family: inherit; transition: all 0.2s; }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .filter-btn:hover:not(.active) { background: rgba(126,19,50,0.07); }
+
+        /* ── Buttons ─────────────────────────────────────── */
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 0.55rem 1.1rem; border-radius: var(--radius-lg); font-size: 0.85rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all var(--transition); text-decoration: none; white-space: nowrap; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #9a1a3e); color: white; box-shadow: 0 4px 12px rgba(126,19,50,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(126,19,50,0.4); }
+        .btn-ghost { background: rgba(126,19,50,0.07); color: var(--primary); border: 1px solid rgba(126,19,50,0.15); }
+        .btn-ghost:hover { background: rgba(126,19,50,0.12); }
+        .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
+
+        /* ── Empty State ─────────────────────────────────── */
+        .empty-state { text-align: center; padding: 2rem; color: #9e7080; font-size: 0.85rem; }
+        .empty-state i { font-size: 2rem; margin-bottom: 8px; display: block; opacity: 0.4; }
+
+        /* ── Toast ───────────────────────────────────────── */
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; background: #1e0a13; color: white; padding: 12px 18px; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 8px 30px rgba(0,0,0,0.3); animation: toastIn 0.3s ease; }
+        .toast.success { border-left: 3px solid #4ade80; }
+        .toast.error   { border-left: 3px solid #f87171; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .section-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div class="brand-icon">
+                    <img src="/static/images/ICST-Logo-Final@4x-1.png"
+                         onerror="this.parentElement.innerHTML='🎓'" alt="ICST">
+                </div>
+                <div>
+                    <div class="brand-text">ICST Admin</div>
+                    <div class="brand-sub">Chatbot Control Panel</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="nav-item active">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">Content</div>
+            <a href="{{ url_for('admin_intents') }}" class="nav-item">
+                <i class="fas fa-brain"></i> Q&amp;A Intents
+            </a>
+            <a href="{{ url_for('admin_user_conversations') }}" class="nav-item">
+                <i class="fas fa-comments"></i> Conversations
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">System</div>
+            <a href="{{ url_for('admin_settings') }}" class="nav-item">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-item" target="_blank">
+                <i class="fas fa-external-link-alt"></i> View Chatbot
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-row">
+                <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+                <div>
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Analytics</h1>
+                <p class="page-subtitle">Chatbot performance and usage insights</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Day Filter -->
+        <div class="filter-bar">
+            <button class="filter-btn {{ 'active' if days == 7 }}"  onclick="filterDays(7)">7 Days</button>
+            <button class="filter-btn {{ 'active' if days == 30 }}" onclick="filterDays(30)">30 Days</button>
+            <button class="filter-btn {{ 'active' if days == 90 }}" onclick="filterDays(90)">90 Days</button>
+            <button class="filter-btn {{ 'active' if days == 365 }}" onclick="filterDays(365)">All Time</button>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid">
+            <div class="glass glass-hover stat-card primary">
+                <div class="stat-icon"><i class="fas fa-comments"></i></div>
+                <div class="stat-label">Total Messages</div>
+                <div class="stat-value">{{ total }}</div>
+            </div>
+            <div class="glass glass-hover stat-card emerald">
+                <div class="stat-icon"><i class="fas fa-smile"></i></div>
+                <div class="stat-label">Positive</div>
+                <div class="stat-value">{{ pos }}</div>
+            </div>
+            <div class="glass glass-hover stat-card red">
+                <div class="stat-icon"><i class="fas fa-frown"></i></div>
+                <div class="stat-label">Negative</div>
+                <div class="stat-value">{{ neg }}</div>
+            </div>
+            <div class="glass glass-hover stat-card cyan">
+                <div class="stat-icon"><i class="fas fa-meh"></i></div>
+                <div class="stat-label">Neutral</div>
+                <div class="stat-value">{{ neutral }}</div>
+            </div>
+            <div class="glass glass-hover stat-card gold">
+                <div class="stat-icon"><i class="fas fa-question"></i></div>
+                <div class="stat-label">Unanswered</div>
+                <div class="stat-value">{{ unanswered }}</div>
+            </div>
+            <div class="glass glass-hover stat-card primary">
+                <div class="stat-icon"><i class="fas fa-star"></i></div>
+                <div class="stat-label">Satisfaction</div>
+                <div class="stat-value">{{ satisfaction_rate }}%</div>
+            </div>
+            <div class="glass glass-hover stat-card emerald">
+                <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="stat-label">Avg Confidence</div>
+                <div class="stat-value">{{ avg_confidence }}%</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="section-grid" style="margin-bottom:1.25rem">
+            <!-- Daily Chart -->
+            <div class="glass" style="grid-column: span 2; min-width:0">
+                <div class="card-header">
+                    <span class="card-title">Daily Conversations</span>
+                    <span class="card-badge">{{ days }} days</span>
+                </div>
+                <div class="card-body">
+                    {% if daily %}
+                    <div class="chart-wrap">
+                        <div class="chart-bars" id="dailyChart"></div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-chart-bar"></i>No conversation data for this period</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="section-grid">
+            <!-- Top Intents -->
+            <div class="glass">
+                <div class="card-header">
+                    <span class="card-title">Top Intents</span>
+                    <span class="card-badge">{{ top_intents|length }} intents</span>
+                </div>
+                <div class="card-body">
+                    {% if top_intents %}
+                    {% set max_c = top_intents[0].count if top_intents else 1 %}
+                    {% for item in top_intents %}
+                    <div class="hbar-row">
+                        <div class="hbar-label" title="{{ item.intent }}">{{ item.intent }}</div>
+                        <div class="hbar-track">
+                            <div class="hbar-fill"
+                                 style="width:{{ ((item.count/max_c)*100)|round(1) }}%;background:linear-gradient(90deg,var(--primary),#9a1a3e)"></div>
+                        </div>
+                        <div class="hbar-count">{{ item.count }}</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-brain"></i>No intent data</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Language Distribution -->
+            <div class="glass">
+                <div class="card-header">
+                    <span class="card-title">Language Distribution</span>
+                    <span class="card-badge">3 languages</span>
+                </div>
+                <div class="card-body">
+                    {% set total_lang = lang_stats.values()|sum %}
+                    {% if total_lang > 0 %}
+                    {% for name, count in lang_stats.items() %}
+                    {% set pct = ((count / total_lang) * 100)|round(1) %}
+                    <div class="hbar-row">
+                        <div class="hbar-label">
+                            {% if name == 'English' %}🇬🇧 {{ name }}
+                            {% elif name == 'Tamil' %}🇱🇰 {{ name }}
+                            {% elif name == 'Sinhala' %}🇱🇰 {{ name }}
+                            {% else %}{{ name }}{% endif %}
+                        </div>
+                        <div class="hbar-track">
+                            <div class="hbar-fill"
+                                 style="width:{{ pct }}%;background:{% if name=='English' %}#3b82f6{% elif name=='Tamil' %}#f59e0b{% else %}#10b981{% endif %}">
+                            </div>
+                        </div>
+                        <div class="hbar-count">{{ count }}</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-globe"></i>No language data</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+'use strict';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('visible');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+function filterDays(d) {
+    window.location.href = `/admin/analytics?days=${d}`;
+}
+
+function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}" style="margin-right:6px"></i>${msg}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+function exportCSV() {
+    const days = {{ days }};
+    fetch('/admin/analytics/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ days })
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('Export failed');
+        return r.blob();
+    })
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download = `analytics_${days}days.csv`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+        showToast('CSV exported successfully!', 'success');
+    })
+    .catch(() => showToast('Export failed. Please try again.', 'error'));
+}
+
+// ── Build daily chart ────────────────────────────────────────
+(function buildDailyChart() {
+    const chartEl = document.getElementById('dailyChart');
+    if (!chartEl) return;
+    const rawData = {{ daily | tojson }};
+    if (!rawData || rawData.length === 0) return;
+
+    const maxCount = Math.max(...rawData.map(d => d.count), 1);
+    chartEl.innerHTML = '';
+
+    rawData.forEach(d => {
+        const pct   = Math.max((d.count / maxCount) * 100, 2);
+        const label = d.date ? d.date.slice(5) : '';
+        const wrap  = document.createElement('div');
+        wrap.className = 'chart-bar-wrap';
+
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = pct + '%';
+        bar.innerHTML = `<div class="chart-bar-tip">${d.date}: ${d.count}</div>`;
+
+        const lbl = document.createElement('div');
+        lbl.className = 'chart-bar-label';
+        lbl.textContent = label;
+
+        wrap.appendChild(bar); wrap.appendChild(lbl);
+        chartEl.appendChild(wrap);
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Admin Dashboard – ICST Chatbot">
+    <meta name="theme-color" content="#7E1332">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>ICST Chatbot — Admin Dashboard</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary:      #7E1332;
+            --primary-lt:   #fce7ed;
+            --primary-dk:   #5c0e24;
+            --gold:         #c9a03d;
+            --gold-lt:      #fef3c7;
+            --emerald:      #059669;
+            --cyan:         #0891b2;
+            --red:          #dc2626;
+            --glass-bg:     rgba(255,255,255,0.75);
+            --glass-border: rgba(255,255,255,0.4);
+            --sidebar-w:    17rem;
+            --radius-xl:    1.25rem;
+            --radius-lg:    0.875rem;
+            --shadow:       0 4px 24px rgba(126,19,50,0.08), 0 1px 4px rgba(0,0,0,0.04);
+            --shadow-hover: 0 12px 40px rgba(126,19,50,0.14);
+            --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: linear-gradient(135deg, #fce7ed 0%, #fff5f7 55%, #fff8f0 100%);
+            min-height: 100vh; overflow-x: hidden; color: #1e0a13;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #f0a0b5; border-radius: 99px; }
+
+        /* ── Layout ─────────────────────────────────── */
+        .app-shell { display: flex; min-height: 100vh; }
+        .main-content {
+            margin-left: var(--sidebar-w); flex: 1;
+            padding: 2rem; max-width: 100%;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* ── Glass ──────────────────────────────────── */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+        }
+        .glass-hover { transition: transform var(--transition), box-shadow var(--transition); }
+        .glass-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+
+        /* ── Sidebar ────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w); flex-shrink: 0;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px) saturate(1.8);
+            -webkit-backdrop-filter: blur(20px) saturate(1.8);
+            border-right: 1px solid var(--glass-border);
+            position: fixed; top: 0; left: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            box-shadow: 2px 0 20px rgba(126,19,50,0.06);
+            z-index: 50; transition: transform 0.3s ease;
+        }
+        .sidebar-brand {
+            padding: 1.75rem 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.35);
+        }
+        .brand-icon {
+            width: 2.75rem; height: 2.75rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #9a1a3e 100%);
+            border-radius: 0.875rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(126,19,50,0.35); flex-shrink: 0;
+        }
+        .brand-icon img { width: 2rem; height: 2rem; object-fit: contain; }
+        .brand-text { font-size: 0.875rem; font-weight: 700; color: var(--primary); }
+        .brand-sub { font-size: 0.7rem; color: #9e7080; margin-top: 1px; }
+
+        .sidebar-nav { flex: 1; padding: 1rem 0.75rem; overflow-y: auto; }
+        .nav-section-label {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: #b08090; padding: 0.5rem 0.75rem 0.25rem;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.65rem 0.875rem; border-radius: var(--radius-lg);
+            text-decoration: none; color: #7a3050;
+            font-size: 0.875rem; font-weight: 500;
+            transition: all var(--transition); margin-bottom: 2px;
+        }
+        .nav-item:hover { background: rgba(126,19,50,0.08); color: var(--primary); }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(126,19,50,0.12) 0%, rgba(154,26,62,0.08) 100%);
+            color: var(--primary); font-weight: 600;
+            box-shadow: inset 3px 0 0 var(--primary);
+        }
+        .nav-item i { width: 1.1rem; text-align: center; font-size: 0.9rem; }
+        .nav-badge {
+            margin-left: auto; background: var(--red); color: white;
+            font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+            border-radius: 99px; min-width: 18px; text-align: center;
+        }
+        .sidebar-footer {
+            padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.35);
+        }
+        .user-row { display: flex; align-items: center; gap: 0.75rem; }
+        .user-avatar {
+            width: 2rem; height: 2rem; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #9a1a3e);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+        }
+        .user-name { font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+        .user-role { font-size: 0.65rem; color: #9e7080; }
+        .logout-btn {
+            margin-left: auto; background: none; border: none; cursor: pointer;
+            color: #b08090; font-size: 0.9rem; padding: 4px;
+            transition: color var(--transition);
+        }
+        .logout-btn:hover { color: var(--red); }
+
+        /* ── Mobile Sidebar Toggle ──────────────────── */
+        .sidebar-toggle {
+            display: none; position: fixed; top: 1rem; left: 1rem;
+            z-index: 60; background: var(--primary); color: white;
+            border: none; border-radius: 0.75rem; padding: 0.6rem 0.75rem;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(126,19,50,0.35);
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-toggle { display: flex; align-items: center; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+            .sidebar-overlay {
+                display: none; position: fixed; inset: 0;
+                background: rgba(0,0,0,0.4); z-index: 45;
+            }
+            .sidebar-overlay.visible { display: block; }
+        }
+
+        /* ── Page Header ────────────────────────────── */
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
+        }
+        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 0.85rem; color: #9e7080; margin-top: 2px; }
+        .header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+        /* ── Stat Cards ─────────────────────────────── */
+        .stats-grid {
+            display: grid; gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            padding: 1.25rem; position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute;
+            width: 80px; height: 80px; border-radius: 50%;
+            top: -20px; right: -20px; opacity: 0.12;
+        }
+        .stat-card.primary::before { background: var(--primary); }
+        .stat-card.emerald::before { background: var(--emerald); }
+        .stat-card.cyan::before    { background: var(--cyan); }
+        .stat-card.gold::before    { background: var(--gold); }
+        .stat-card.red::before     { background: var(--red); }
+
+        .stat-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9e7080; margin-bottom: 6px; }
+        .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .stat-card.primary .stat-value { color: var(--primary); }
+        .stat-card.emerald .stat-value { color: var(--emerald); }
+        .stat-card.cyan .stat-value    { color: var(--cyan); }
+        .stat-card.gold .stat-value    { color: #92400e; }
+        .stat-card.red .stat-value     { color: var(--red); }
+        .stat-icon {
+            width: 2.5rem; height: 2.5rem; border-radius: 0.75rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-bottom: 10px;
+        }
+        .stat-card.primary .stat-icon { background: rgba(126,19,50,0.1); color: var(--primary); }
+        .stat-card.emerald .stat-icon { background: rgba(5,150,105,0.1); color: var(--emerald); }
+        .stat-card.cyan .stat-icon    { background: rgba(8,145,178,0.1); color: var(--cyan); }
+        .stat-card.gold .stat-icon    { background: rgba(201,160,61,0.15); color: #92400e; }
+        .stat-card.red .stat-icon     { background: rgba(220,38,38,0.1); color: var(--red); }
+
+        /* ── Section Grid ───────────────────────────── */
+        .section-grid {
+            display: grid; gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            margin-bottom: 1.25rem;
+        }
+        .section-full { grid-column: 1 / -1; }
+
+        /* ── Card Header ────────────────────────────── */
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.125rem 1.375rem 0;
+        }
+        .card-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+        .card-badge {
+            font-size: 0.7rem; font-weight: 700; padding: 3px 8px;
+            border-radius: 99px; background: var(--primary-lt); color: var(--primary);
+        }
+        .card-body { padding: 1rem 1.375rem 1.375rem; }
+
+        /* ── Bar Chart ──────────────────────────────── */
+        .chart-bars {
+            display: flex; align-items: flex-end; gap: 3px;
+            height: 120px; padding: 0 4px;
+        }
+        .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .chart-bar {
+            width: 100%; background: linear-gradient(180deg, var(--primary) 0%, #9a1a3e 100%);
+            border-radius: 3px 3px 0 0; min-height: 3px;
+            transition: height 0.6s cubic-bezier(0.22,1,0.36,1);
+            cursor: pointer; position: relative;
+        }
+        .chart-bar:hover { opacity: 0.8; }
+        .chart-bar-label { font-size: 8px; color: #9e7080; white-space: nowrap; overflow: hidden; }
+        .chart-bar-tip {
+            display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+            transform: translateX(-50%); background: #1e0a13; color: white;
+            font-size: 11px; padding: 3px 7px; border-radius: 6px; white-space: nowrap;
+            pointer-events: none; z-index: 10;
+        }
+        .chart-bar:hover .chart-bar-tip { display: block; }
+
+        /* ── Top Intents ────────────────────────────── */
+        .intent-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 7px 0; border-bottom: 1px solid rgba(126,19,50,0.06);
+        }
+        .intent-row:last-child { border-bottom: none; }
+        .intent-label { font-size: 0.8rem; color: #3d0a1a; flex: 1; min-width: 0; truncate: true; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .intent-bar-wrap { flex: 2; height: 6px; background: rgba(126,19,50,0.08); border-radius: 99px; overflow: hidden; }
+        .intent-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #9a1a3e); border-radius: 99px; transition: width 0.6s ease; }
+        .intent-count { font-size: 0.75rem; font-weight: 700; color: var(--primary); width: 28px; text-align: right; flex-shrink: 0; }
+
+        /* ── Recent Conversations ───────────────────── */
+        .conv-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .conv-table th {
+            text-align: left; padding: 8px 10px; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: #9e7080; border-bottom: 1px solid rgba(126,19,50,0.1);
+            white-space: nowrap;
+        }
+        .conv-table td { padding: 9px 10px; border-bottom: 1px solid rgba(126,19,50,0.05); vertical-align: top; }
+        .conv-table tr:last-child td { border-bottom: none; }
+        .conv-table tr:hover td { background: rgba(126,19,50,0.03); }
+        .msg-preview { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #3d0a1a; }
+        .lang-pill {
+            display: inline-block; font-size: 0.65rem; font-weight: 700;
+            padding: 2px 7px; border-radius: 99px;
+        }
+        .lang-pill.en { background: #dbeafe; color: #1d4ed8; }
+        .lang-pill.ta { background: #fef3c7; color: #92400e; }
+        .lang-pill.si { background: #dcfce7; color: #166534; }
+        .sentiment-pill {
+            display: inline-block; font-size: 0.65rem; font-weight: 700;
+            padding: 2px 7px; border-radius: 99px;
+        }
+        .sentiment-pill.positive { background: #dcfce7; color: #166534; }
+        .sentiment-pill.negative { background: #fee2e2; color: #991b1b; }
+        .sentiment-pill.neutral  { background: #f3f4f6; color: #6b7280; }
+
+        /* ── Unanswered ─────────────────────────────── */
+        .unanswered-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid rgba(126,19,50,0.06);
+        }
+        .unanswered-item:last-child { border-bottom: none; }
+        .unanswered-q { font-size: 0.82rem; color: #3d0a1a; flex: 1; line-height: 1.4; }
+        .unanswered-meta { font-size: 0.7rem; color: #9e7080; margin-top: 2px; }
+        .count-badge {
+            background: rgba(220,38,38,0.1); color: var(--red);
+            font-size: 0.7rem; font-weight: 700; padding: 2px 7px;
+            border-radius: 99px; white-space: nowrap; flex-shrink: 0;
+        }
+        .resolve-btn {
+            background: none; border: 1px solid rgba(5,150,105,0.3); color: var(--emerald);
+            font-size: 0.7rem; font-weight: 600; padding: 3px 9px;
+            border-radius: 6px; cursor: pointer; transition: all 0.2s;
+            flex-shrink: 0; font-family: inherit;
+        }
+        .resolve-btn:hover { background: rgba(5,150,105,0.1); }
+
+        /* ── Lang Distribution ──────────────────────── */
+        .lang-dist { display: flex; gap: 12px; padding: 8px 0; flex-wrap: wrap; }
+        .lang-dist-item { flex: 1; min-width: 80px; text-align: center; padding: 12px; background: rgba(126,19,50,0.04); border-radius: 12px; }
+        .lang-dist-pct { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .lang-dist-name { font-size: 0.72rem; color: #9e7080; margin-top: 3px; }
+
+        /* ── Buttons ────────────────────────────────── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 0.55rem 1.1rem; border-radius: var(--radius-lg);
+            font-size: 0.85rem; font-weight: 600; font-family: inherit;
+            cursor: pointer; border: none; transition: all var(--transition);
+            text-decoration: none; white-space: nowrap;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #9a1a3e);
+            color: white; box-shadow: 0 4px 12px rgba(126,19,50,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(126,19,50,0.4); }
+        .btn-ghost {
+            background: rgba(126,19,50,0.07); color: var(--primary);
+            border: 1px solid rgba(126,19,50,0.15);
+        }
+        .btn-ghost:hover { background: rgba(126,19,50,0.12); }
+        .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.78rem; }
+
+        /* ── Toast ──────────────────────────────────── */
+        .toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+            background: #1e0a13; color: white; padding: 12px 18px;
+            border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            animation: toastIn 0.3s ease; max-width: 320px;
+        }
+        .toast.success { border-left: 3px solid #4ade80; }
+        .toast.error   { border-left: 3px solid #f87171; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+        /* ── Empty State ────────────────────────────── */
+        .empty-state { text-align: center; padding: 2rem 1rem; color: #9e7080; font-size: 0.85rem; }
+        .empty-state i { font-size: 2rem; margin-bottom: 8px; display: block; opacity: 0.4; }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .section-grid { grid-template-columns: 1fr; }
+            .conv-table th:nth-child(3), .conv-table td:nth-child(3),
+            .conv-table th:nth-child(5), .conv-table td:nth-child(5) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <i class="fas fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div style="display:flex;align-items:center;gap:10px">
+                <div class="brand-icon">
+                    <img src="/static/images/ICST-Logo-Final@4x-1.png"
+                         onerror="this.parentElement.innerHTML='🎓'" alt="ICST">
+                </div>
+                <div>
+                    <div class="brand-text">ICST Admin</div>
+                    <div class="brand-sub">Chatbot Control Panel</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">Content</div>
+            <a href="{{ url_for('admin_intents') }}" class="nav-item">
+                <i class="fas fa-brain"></i> Q&amp;A Intents
+            </a>
+            <a href="{{ url_for('admin_user_conversations') }}" class="nav-item">
+                <i class="fas fa-comments"></i> Conversations
+            </a>
+            <div class="nav-section-label" style="margin-top:10px">System</div>
+            <a href="{{ url_for('admin_settings') }}" class="nav-item">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-item" target="_blank">
+                <i class="fas fa-external-link-alt"></i> View Chatbot
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-row">
+                <div class="user-avatar">{{ current_user.username[0].upper() }}</div>
+                <div>
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="toast {{ 'success' if category in ('success','info') else 'error' }}"
+                 id="flashToast" style="position:relative;bottom:auto;right:auto;margin-bottom:1rem;max-width:100%">
+                <i class="fas {{ 'fa-check-circle' if category in ('success','info') else 'fa-exclamation-circle' }}"
+                   style="margin-right:6px"></i>{{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Overview of chatbot activity and performance</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost btn-sm" onclick="reloadIntents()">
+                    <i class="fas fa-sync-alt"></i> Reload Intents
+                </button>
+                <a href="{{ url_for('admin_analytics') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </a>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid">
+            <div class="glass glass-hover stat-card primary">
+                <div class="stat-icon"><i class="fas fa-comments"></i></div>
+                <div class="stat-label">Total Conversations</div>
+                <div class="stat-value">{{ total_conversations }}</div>
+            </div>
+            <div class="glass glass-hover stat-card emerald">
+                <div class="stat-icon"><i class="fas fa-brain"></i></div>
+                <div class="stat-label">Intents</div>
+                <div class="stat-value">{{ total_intents }}</div>
+            </div>
+            <div class="glass glass-hover stat-card cyan">
+                <div class="stat-icon"><i class="fas fa-list"></i></div>
+                <div class="stat-label">Patterns</div>
+                <div class="stat-value">{{ total_patterns }}</div>
+            </div>
+            <div class="glass glass-hover stat-card gold">
+                <div class="stat-icon"><i class="fas fa-reply"></i></div>
+                <div class="stat-label">Responses</div>
+                <div class="stat-value">{{ total_responses }}</div>
+            </div>
+            <div class="glass glass-hover stat-card red">
+                <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
+                <div class="stat-label">Unanswered</div>
+                <div class="stat-value">{{ unanswered_count }}</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="section-grid">
+            <!-- Daily Chart -->
+            <div class="glass" style="min-width:0">
+                <div class="card-header">
+                    <span class="card-title">Daily Conversations (30 days)</span>
+                    <span class="card-badge">Chart</span>
+                </div>
+                <div class="card-body">
+                    {% if daily %}
+                    <div class="chart-bars" id="dailyChart"></div>
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-chart-bar"></i>No data yet</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Language Distribution -->
+            <div class="glass" style="min-width:0">
+                <div class="card-header">
+                    <span class="card-title">Language Distribution</span>
+                    <span class="card-badge">Breakdown</span>
+                </div>
+                <div class="card-body">
+                    {% set total_lang = lang_distribution.values()|sum %}
+                    {% if total_lang > 0 %}
+                    <div class="lang-dist">
+                        {% for lang_code, count in lang_distribution.items() %}
+                        {% set pct = ((count / total_lang) * 100) | round(1) %}
+                        <div class="lang-dist-item">
+                            <div class="lang-dist-pct">{{ pct }}%</div>
+                            <div class="lang-dist-name">
+                                {% if lang_code == 'en' %}🇬🇧 English
+                                {% elif lang_code == 'ta' %}🇱🇰 Tamil
+                                {% elif lang_code == 'si' %}🇱🇰 Sinhala
+                                {% else %}{{ lang_code }}{% endif %}
+                            </div>
+                            <div style="font-size:0.7rem;color:#9e7080;margin-top:2px">{{ count }} msgs</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-globe"></i>No conversations yet</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Intents + Sentiments Row -->
+        <div class="section-grid">
+            <!-- Top Intents -->
+            <div class="glass">
+                <div class="card-header">
+                    <span class="card-title">Top Intents</span>
+                    <span class="card-badge">Top 10</span>
+                </div>
+                <div class="card-body">
+                    {% if top_intents %}
+                    {% set max_count = top_intents[0].count if top_intents else 1 %}
+                    {% for item in top_intents %}
+                    <div class="intent-row">
+                        <div class="intent-label" title="{{ item.intent }}">{{ item.intent }}</div>
+                        <div class="intent-bar-wrap">
+                            <div class="intent-bar-fill"
+                                 style="width:{{ ((item.count / max_count) * 100)|round(1) }}%"></div>
+                        </div>
+                        <div class="intent-count">{{ item.count }}</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-brain"></i>No intent data yet</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sentiment Overview -->
+            <div class="glass">
+                <div class="card-header">
+                    <span class="card-title">Sentiment Overview</span>
+                    <span class="card-badge">Analysis</span>
+                </div>
+                <div class="card-body">
+                    {% set total_sent = sentiments.values()|sum if sentiments else 0 %}
+                    {% if total_sent > 0 %}
+                    {% for sent, count in sentiments.items() %}
+                    {% set pct = ((count / total_sent) * 100)|round(1) %}
+                    <div style="margin-bottom:12px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                            <span style="font-size:0.82rem;font-weight:600;color:#3d0a1a">
+                                {% if sent == 'positive' %}😊 Positive
+                                {% elif sent == 'negative' %}😟 Negative
+                                {% else %}😐 Neutral{% endif %}
+                            </span>
+                            <span style="font-size:0.78rem;color:#9e7080">{{ count }} ({{ pct }}%)</span>
+                        </div>
+                        <div style="height:6px;background:rgba(126,19,50,0.08);border-radius:99px;overflow:hidden">
+                            <div style="height:100%;border-radius:99px;width:{{ pct }}%;
+                                background:{% if sent=='positive' %}#4ade80{% elif sent=='negative' %}#f87171{% else %}#94a3b8{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state"><i class="fas fa-smile"></i>No sentiment data yet</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Unanswered Questions -->
+        {% if unanswered %}
+        <div class="glass" style="margin-bottom:1.25rem">
+            <div class="card-header">
+                <span class="card-title">⚠️ Unanswered Questions</span>
+                <span class="card-badge" style="background:#fee2e2;color:var(--red)">
+                    {{ unanswered|length }} pending
+                </span>
+            </div>
+            <div class="card-body">
+                {% for q in unanswered %}
+                <div class="unanswered-item">
+                    <div style="flex:1;min-width:0">
+                        <div class="unanswered-q">{{ q.question }}</div>
+                        <div class="unanswered-meta">
+                            Asked {{ q.asked_count }}× ·
+                            <span class="lang-pill {{ q.language or 'en' }}">{{ q.language or 'en' }}</span>
+                        </div>
+                    </div>
+                    <span class="count-badge">×{{ q.asked_count }}</span>
+                    <form method="POST" action="{{ url_for('resolve_unanswered', qid=q.id) }}"
+                          style="display:inline" onsubmit="this.querySelector('button').disabled=true">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="resolve-btn">✓ Resolve</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Conversations -->
+        <div class="glass">
+            <div class="card-header">
+                <span class="card-title">Recent Conversations</span>
+                <a href="{{ url_for('admin_user_conversations') }}" class="btn btn-ghost btn-sm">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body" style="padding-top:0.5rem;overflow-x:auto">
+                {% if recent %}
+                <table class="conv-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Message</th>
+                            <th>Intent</th>
+                            <th>Lang</th>
+                            <th>Sentiment</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in recent %}
+                        <tr>
+                            <td style="color:#9e7080;font-size:0.75rem">
+                                {{ (c.user_name or 'Anon')[:12] }}
+                            </td>
+                            <td>
+                                <div class="msg-preview" title="{{ c.message }}">
+                                    {{ c.message or '—' }}
+                                </div>
+                            </td>
+                            <td style="font-size:0.75rem;color:#7a3050">
+                                {{ (c.intent or '—')[:18] }}
+                            </td>
+                            <td>
+                                <span class="lang-pill {{ c.language or 'en' }}">
+                                    {{ c.language or 'en' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if c.sentiment %}
+                                <span class="sentiment-pill {{ c.sentiment }}">{{ c.sentiment }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td style="font-size:0.72rem;color:#9e7080;white-space:nowrap">
+                                {% if c.timestamp %}
+                                    {{ c.timestamp.strftime('%d %b %H:%M') }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    No conversations yet. Once users start chatting, they'll appear here.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+'use strict';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+// ── Sidebar toggle ───────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('visible');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}" style="margin-right:6px"></i>${msg}`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── Reload Intents ───────────────────────────────────────────
+function reloadIntents() {
+    fetch('/admin/reload-intents', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => showToast(d.message || 'Intents reloaded!', 'success'))
+    .catch(() => showToast('Reload failed', 'error'));
+}
+
+// ── Daily Chart ──────────────────────────────────────────────
+(function buildDailyChart() {
+    const chartEl = document.getElementById('dailyChart');
+    if (!chartEl) return;
+
+    const rawData = {{ daily | tojson }};
+    if (!rawData || rawData.length === 0) return;
+
+    const maxCount = Math.max(...rawData.map(d => d.count), 1);
+    chartEl.innerHTML = '';
+
+    rawData.forEach(d => {
+        const pct = Math.max((d.count / maxCount) * 100, 3);
+        const label = d.date ? d.date.slice(5) : ''; // MM-DD
+
+        const wrap = document.createElement('div');
+        wrap.className = 'chart-bar-wrap';
+
+        const bar = document.createElement('div');
+        bar.className = 'chart-bar';
+        bar.style.height = pct + '%';
+        bar.innerHTML = `<div class="chart-bar-tip">${d.date}: ${d.count}</div>`;
+
+        const lbl = document.createElement('div');
+        lbl.className = 'chart-bar-label';
+        lbl.textContent = label;
+
+        wrap.appendChild(bar);
+        wrap.appendChild(lbl);
+        chartEl.appendChild(wrap);
+    });
+})();
+
+// ── Auto-dismiss flash toasts ────────────────────────────────
+document.querySelectorAll('#flashToast').forEach(el => {
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000);
+    el.style.transition = 'opacity 0.3s';
+});
+</script>
+</body>
+</html>

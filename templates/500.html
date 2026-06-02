@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Server Error – ICST University">
+    <meta name="theme-color" content="#001120">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+    <title>500 — Server Error · ICST University</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy:     #001120;
+            --crimson:  #7f1d1d;
+            --red:      #dc2626;
+            --red-lt:   #fca5a5;
+            --offwhite: #f5f0e8;
+            --gold:     #c9a03d;
+        }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--navy);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            color: var(--offwhite);
+        }
+
+        /* Background layers */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(220,38,38,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(220,38,38,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        .bg-glow-red {
+            position: absolute;
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(127,29,29,0.35) 0%, transparent 65%);
+            top: -250px; right: -150px;
+            pointer-events: none;
+        }
+
+        .bg-glow-dark {
+            position: absolute;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(0,30,60,0.6) 0%, transparent 65%);
+            bottom: -150px; left: -100px;
+            pointer-events: none;
+        }
+
+        .ghost-number {
+            position: absolute;
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(220px, 30vw, 380px);
+            font-weight: 800;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(220,38,38,0.07);
+            letter-spacing: -20px;
+            line-height: 1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Card */
+        .card {
+            position: relative;
+            max-width: 560px;
+            width: 100%;
+            z-index: 10;
+            animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) both;
+        }
+
+        @keyframes rise {
+            from { opacity:0; transform: translateY(32px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        .accent-bar {
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, var(--red) 30%, #ef4444 60%, transparent 100%);
+            border-radius: 99px;
+            margin-bottom: 40px;
+            animation: bar-in 1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+            transform-origin: left;
+        }
+
+        @keyframes bar-in {
+            from { transform: scaleX(0); opacity: 0; }
+            to   { transform: scaleX(1); opacity: 1; }
+        }
+
+        .error-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(220,38,38,0.12);
+            border: 1px solid rgba(220,38,38,0.3);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--red-lt);
+            margin-bottom: 24px;
+        }
+
+        .error-badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-weight: 800;
+            line-height: 1.05;
+            color: var(--offwhite);
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        h1 span { color: #f87171; }
+
+        .subtitle {
+            font-size: 1rem;
+            color: rgba(245,240,232,0.5);
+            line-height: 1.65;
+            max-width: 440px;
+            margin-bottom: 32px;
+        }
+
+        /* Notice */
+        .notice {
+            background: rgba(127,29,29,0.2);
+            border: 1px solid rgba(220,38,38,0.25);
+            border-left: 3px solid var(--red);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 14px;
+            color: rgba(245,240,232,0.75);
+            line-height: 1.65;
+            margin-bottom: 28px;
+        }
+
+        /* Error details (hidden by default) */
+        .error-details {
+            display: none;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-left: 3px solid var(--red);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            font-family: 'DM Mono', 'Courier New', monospace;
+            font-size: 12px;
+            color: rgba(245,240,232,0.5);
+            word-break: break-all;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 22px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: rgba(220,38,38,0.2);
+            color: var(--red-lt);
+            border: 1px solid rgba(220,38,38,0.35);
+        }
+        .btn-primary:hover { background: rgba(220,38,38,0.3); transform: translateY(-1px); }
+
+        .btn-ghost {
+            background: rgba(255,255,255,0.05);
+            color: rgba(245,240,232,0.7);
+            border: 1px solid rgba(255,255,255,0.09);
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.09); color: var(--offwhite); }
+
+        .btn-home {
+            background: linear-gradient(135deg, #002b5c 0%, #003a6b 100%);
+            color: var(--offwhite);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .btn-home:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
+
+        /* Contact box */
+        .contact-box {
+            background: rgba(201,160,61,0.07);
+            border: 1px solid rgba(201,160,61,0.2);
+            border-radius: 14px;
+            padding: 20px 24px;
+            font-size: 13.5px;
+            color: rgba(245,240,232,0.6);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .contact-box strong { color: rgba(245,240,232,0.85); }
+        .contact-box a { color: var(--gold); text-decoration: none; font-weight: 600; }
+        .contact-box a:hover { text-decoration: underline; }
+
+        /* Countdown */
+        .countdown {
+            font-size: 12px;
+            color: rgba(245,240,232,0.3);
+        }
+
+        .countdown button {
+            background: none;
+            border: none;
+            color: rgba(245,240,232,0.3);
+            font-size: 11px;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 6px;
+            transition: color 0.2s;
+        }
+        .countdown button:hover { color: rgba(245,240,232,0.6); }
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="bg-glow-red"></div>
+    <div class="bg-glow-dark"></div>
+    <div class="ghost-number" aria-hidden="true">500</div>
+
+    <div class="card">
+        <div class="accent-bar"></div>
+
+        <div class="error-badge">Error 500</div>
+
+        <h1>Something went<br><span>wrong.</span></h1>
+        <p class="subtitle">Our servers hit an unexpected snag. The team has been notified and is on it. Please try again in a moment.</p>
+
+        <div class="notice">
+            😓 An internal server error occurred. We've automatically logged the issue and our team is investigating. This usually resolves in a few minutes.
+        </div>
+
+        <div class="error-details" id="errorDetails">
+            <strong style="color:rgba(245,240,232,0.6);">Technical Details:</strong><br>
+            <span id="errorTrace"></span>
+        </div>
+
+        <div class="btn-row">
+            <a href="javascript:history.back()" class="btn btn-ghost">← Go Back</a>
+            <a href="/" class="btn btn-home">🏠 Home Page</a>
+            <button onclick="retryLastAction()" class="btn btn-primary">🔄 Retry</button>
+        </div>
+
+        <div class="contact-box">
+            <strong>Need immediate help?</strong><br>
+            📞 <a href="tel:+94743444444">+94 743 444 444</a> &nbsp;·&nbsp;
+            ✉️ <a href="mailto:support@icst.edu.lk">support@icst.edu.lk</a><br>
+            <span style="font-size:12px;">Support available Mon–Fri, 9 am–5 pm</span>
+        </div>
+
+        <div class="countdown" id="countdown"></div>
+    </div>
+
+    <script>
+        // Show stored error details
+        try {
+            const errorInfo = sessionStorage.getItem('lastError');
+            if (errorInfo) {
+                const error = JSON.parse(errorInfo);
+                const det = document.getElementById('errorDetails');
+                document.getElementById('errorTrace').textContent = error.message || error.trace || 'No details';
+                det.style.display = 'block';
+                sessionStorage.removeItem('lastError');
+            }
+        } catch(e) {}
+
+        function retryLastAction() {
+            const lastUrl = sessionStorage.getItem('lastUrl');
+            if (lastUrl && lastUrl !== window.location.href) {
+                window.location.href = lastUrl;
+            } else {
+                window.location.reload();
+            }
+        }
+
+        // Store the referrer (the page that caused the 500) for retry
+        const lastUrl = document.referrer || sessionStorage.getItem('lastUrl');
+        if (lastUrl && lastUrl !== window.location.href) {
+            sessionStorage.setItem('lastUrl', lastUrl);
+        }
+
+        // Auto-refresh countdown
+        let secs = 30;
+        let cancelled = false;
+        const countEl = document.getElementById('countdown');
+        countEl.innerHTML = `Auto-refreshing in <span id="countNum">${secs}</span>s…<button onclick="cancelAutoRefresh()">Cancel</button>`;
+
+        const timer = setInterval(() => {
+            if (cancelled) { clearInterval(timer); return; }
+            secs--;
+            const el = document.getElementById('countNum');
+            if (el) el.textContent = secs;
+            if (secs <= 0) { clearInterval(timer); window.location.reload(); }
+        }, 1000);
+
+        function cancelAutoRefresh() {
+            cancelled = true;
+            clearInterval(timer);
+            countEl.textContent = 'Auto-refresh cancelled.';
+        }
+
+        // Clean up the interval when the user navigates away
+        window.addEventListener('pagehide', function() { clearInterval(timer); });
+    </script>
+</body>
+</html>

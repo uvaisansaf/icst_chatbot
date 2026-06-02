@@ -1,0 +1,32 @@
+# ICST University Chatbot v2.0 — Multilingual Direct Engine
+# Python 3.12
+
+# Web framework
+flask>=3.0,<4
+flask-sqlalchemy>=3.1,<4
+flask-login>=0.6,<1
+flask-wtf>=1.2,<2
+gunicorn>=22,<24
+
+# Database 
+sqlalchemy>=2.0,<3
+
+#  Security 
+werkzeug>=3.0,<4
+
+#  NLP (English analysis: sentiment, lemmatization, NER)
+nltk>=3.8,<4
+spacy>=3.7,<4
+
+# spaCy English model (pinned wheel — no post-install script needed on Render/Railway)
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+
+#Fast Fuzzy Matching 
+rapidfuzz>=3.6,<4
+
+#Utilities
+python-dotenv>=1.0,<2
+scikit-learn>=1.0.0
+joblib>=1.2.0
+gTTS>=2.5.0
+

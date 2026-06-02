@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <meta name="description" content="Under Maintenance – ICST University">
+    <meta name="theme-color" content="#001833">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/static/images/ICST-Logo-Final@4x-1.png"/>
+  <title>Under Maintenance · ICST University</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy:    #001833;
+      --navy-md: #002b5c;
+      --gold:    #c9a03d;
+      --gold-lt: #e4c870;
+      --white:   #f5f0e8;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      color: var(--white);
+    }
+
+    /* Background */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(201,160,61,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,160,61,0.04) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+    }
+
+    .bg-orb {
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(0,43,92,0.5) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .bg-orb-gold {
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(201,160,61,0.06) 0%, transparent 65%);
+      top: -100px; right: -100px;
+      pointer-events: none;
+    }
+
+    /* Card */
+    .card {
+      position: relative;
+      z-index: 10;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      animation: rise 0.8s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes rise {
+      from { opacity:0; transform: translateY(32px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* Top accent line */
+    .accent-bar {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+      border-radius: 99px;
+      margin: 0 auto 48px;
+      animation: bar-in 1s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+    }
+
+    @keyframes bar-in {
+      from { width: 0; opacity: 0; }
+      to   { width: 60px; opacity: 1; }
+    }
+
+    /* Rotating gear icon */
+    .gear-wrap {
+      width: 100px; height: 100px;
+      margin: 0 auto 32px;
+      position: relative;
+    }
+
+    .gear-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(201,160,61,0.2);
+      animation: ring-pulse 3s ease-in-out infinite;
+    }
+
+    .gear-ring:nth-child(2) {
+      inset: 8px;
+      border-color: rgba(201,160,61,0.15);
+      animation-delay: 0.5s;
+    }
+
+    @keyframes ring-pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.06); opacity: 0.5; }
+    }
+
+    .gear-icon {
+      position: absolute;
+      inset: 16px;
+      background: rgba(201,160,61,0.1);
+      border: 1px solid rgba(201,160,61,0.25);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      animation: spin 6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(201,160,61,0.1);
+      border: 1px solid rgba(201,160,61,0.25);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-lt);
+      margin-bottom: 24px;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -1px;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+
+    h1 span { color: var(--gold); }
+
+    .desc {
+      font-size: 15px;
+      color: rgba(245,240,232,0.5);
+      line-height: 1.7;
+      max-width: 360px;
+      margin: 0 auto 40px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: rgba(255,255,255,0.05);
+      border-radius: 99px;
+      height: 4px;
+      overflow: hidden;
+      margin: 0 auto 40px;
+      max-width: 300px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-lt) 100%);
+      border-radius: 99px;
+      animation: progress 4s ease-in-out infinite;
+      width: 0%;
+    }
+
+    @keyframes progress {
+      0%   { width: 0%;   opacity: 1; }
+      70%  { width: 85%;  opacity: 1; }
+      90%  { width: 100%; opacity: 0.6; }
+      100% { width: 0%;   opacity: 0; }
+    }
+
+    /* Contact box */
+    .contact-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 24px 28px;
+      font-size: 14px;
+      color: rgba(245,240,232,0.5);
+      line-height: 1.9;
+    }
+
+    .contact-box strong {
+      color: rgba(245,240,232,0.8);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    .contact-box a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .contact-box a:hover { color: var(--gold-lt); }
+
+    /* Bottom bar */
+    .bottom-bar {
+      margin-top: 36px;
+      font-size: 12px;
+      color: rgba(245,240,232,0.2);
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb-gold"></div>
+
+  <div class="card">
+    <div class="accent-bar"></div>
+
+    <div class="gear-wrap">
+      <div class="gear-ring"></div>
+      <div class="gear-ring"></div>
+      <div class="gear-icon">⚙️</div>
+    </div>
+
+    <div class="status-badge">Scheduled Maintenance</div>
+
+    <h1>We'll be back<br><span>shortly.</span></h1>
+    <p class="desc">The ICST University chatbot is currently undergoing scheduled maintenance. We're working hard to improve your experience.</p>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"></div>
+    </div>
+
+    <div class="contact-box">
+      <strong>Need urgent assistance?</strong>
+      📞 <a href="tel:+94743444444">+94 743 444 444</a>
+      &nbsp;·&nbsp;
+      ✉️ <a href="mailto:support@icst.edu.lk">support@icst.edu.lk</a>
+      <br>
+      <span style="font-size:12px;">Support: Mon–Fri, 9 am – 5 pm</span>
+    </div>
+
+    <div class="bottom-bar">ICST University · All systems will be restored shortly</div>
+  </div>
+
+</body>
+</html>
